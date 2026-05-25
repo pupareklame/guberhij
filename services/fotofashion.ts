@@ -5,9 +5,8 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
+import { getAI } from "./geminiService";
 import { FotoFashionConfig } from "../types";
-
-const getAI = () => new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const cleanBase64 = (base64: string) => {
   return base64.split(',')[1] || base64;

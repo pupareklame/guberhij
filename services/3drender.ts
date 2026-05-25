@@ -1,7 +1,6 @@
 
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-
-const getAI = () => new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+import { getAI } from "./geminiService";
 
 const extractImageFromResponse = (response: GenerateContentResponse) => {
   const candidate = response.candidates?.[0];

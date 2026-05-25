@@ -20,6 +20,9 @@ const GuberUpscale: React.FC = () => {
   const [originalResultImage, setOriginalResultImage] = useState<string | null>(null);
   const [sliderPos, setSliderPos] = useState(50);
   const [aspectRatio, setAspectRatio] = useState('9:16');
+  const [modelId, setModelId] = useState<string>('gemini-2.5-flash-image');
+  const [customPrompt, setCustomPrompt] = useState('Ultra-high-resolution 4K enhancement based strictly on the provided reference image. Absolute fidelity to original facial anatomy, proportions, and identity. Preserve expression, gaze, pose, camera angle, framing, and perspective with zero deviation. Clothing, hair, skin, and background elements must remain unchanged in structure, placement, and design.\n\nRecover fine-grain detail with natural realism. Enhance pores, fine lines, hair strands, eyelashes, fabric weave, seams, and material edges without introducing stylization. Maintain original color science, white balance, and tonal relationships exactly as captured. Lighting direction, intensity, contrast, and shadow behavior must match the source image precisely, with only improved clarity and expanded dynamic range. No relighting, no reshaping. Remove any grain.\n\nApply controlled sharpening and high-frequency detail reconstruction. Remove compression artifacts and noise while retaining authentic texture. No smoothing, no plastic skin, no artificial gloss. Facial features must remain consistent across the entire image with coherent anatomy and clean, stable edges.');
+  const [negativePrompt, setNegativePrompt] = useState('no warping, no facial drift, no added or missing anatomy, no altered hands, no distortions, no perspective shift, no text or graphics, no hallucinated detail, no stylized rendering. Output must read as a true-to-life, photorealistic upscale that matches the reference exactly, only clearer, sharper, and higher resolution.');
   
   const [isCropping, setIsCropping] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -51,7 +54,7 @@ const GuberUpscale: React.FC = () => {
     setResultImage(null);
 
     try {
-      const result = await upscaleImage(sourceImage, aspectRatio);
+      const result = await upscaleImage(sourceImage, aspectRatio, customPrompt, negativePrompt, modelId);
       setResultImage(result);
       setOriginalResultImage(result);
       setProcessing({ isProcessing: false, error: null, progress: '' });
@@ -111,7 +114,7 @@ const GuberUpscale: React.FC = () => {
     if (!resultImage) return;
     setProcessing({ isProcessing: true, error: null, progress: 'Sharpening & Enhancing Details...' });
     try {
-      const upscaled = await upscaleImage(resultImage, aspectRatio);
+      const upscaled = await upscaleImage(resultImage, aspectRatio, customPrompt, negativePrompt, modelId);
       setResultImage(upscaled);
       setProcessing({ isProcessing: false, error: null, progress: '' });
     } catch (err: any) {
@@ -125,11 +128,11 @@ const GuberUpscale: React.FC = () => {
   };
 
   return (
-    <div className="h-full bg-slate-50/50 overflow-y-auto custom-scrollbar">
-      <div className="max-w-2xl mx-auto min-h-full bg-white flex flex-col border-x border-slate-100">
-        {/* Header */}
+    <div className="lg:h-screen bg-slate-50/50 lg:overflow-hidden min-h-screen custom-scrollbar overflow-x-hidden">
+      <div className="max-w-2xl lg:max-w-full mx-auto lg:h-full bg-white flex flex-col border-x border-slate-100 shadow-sm">
+        {/* Header - Hidden on Desktop */}
         <div 
-          className="p-4 border-b border-white/10 rounded-b-[40px] shadow-xl"
+          className="p-4 border-b border-white/10 rounded-b-[40px] shadow-xl z-20 lg:hidden"
           style={{ 
             background: `linear-gradient(135deg, ${primaryColor}, color-mix(in srgb, ${primaryColor}, black 20%))`,
           }}
@@ -140,210 +143,288 @@ const GuberUpscale: React.FC = () => {
                 <Maximize size={16} />
               </div>
               <div className="flex flex-col">
-                <h1 className="text-base font-black text-white tracking-tight leading-none mb-0.5 uppercase">Ultra Upscale AI</h1>
-                <p className="text-[7px] font-bold uppercase tracking-[0.3em] leading-none text-white/60">Neural HD Reconstruction</p>
+                <h1 className="text-base font-black text-white tracking-tight leading-none mb-0.5 uppercase">4K ULTRA UPSCALE</h1>
+                <p className="text-[7px] font-bold uppercase tracking-[0.3em] leading-none text-white/60">Absolute Fidelity Reconstruction</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="p-8 space-y-6">
-          {/* Image Upload */}
-          <div className="space-y-4">
-            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <ImageIcon size={14} className="text-slate-300" /> 1. Unggah Foto
-            </label>
-            <ImageUploader 
-              label="Pilih Foto Buram" 
-              image={sourceImage} 
-              onImageSelect={setSourceImage} 
-              aspectRatio="9-16" 
-              labelInside 
-            />
-          </div>
+        <div className="p-4 lg:p-4 lg:flex-1 lg:overflow-hidden overflow-y-auto">
+          <div className="lg:grid lg:grid-cols-12 lg:gap-4 lg:h-full lg:overflow-hidden flex flex-col">
+            {/* Column 1: Source & Model */}
+            <div className="lg:col-span-3 flex flex-col gap-4 lg:h-full lg:overflow-hidden lg:pr-4 lg:border-r lg:border-slate-200">
+              {/* Image Upload */}
+              <div className="flex-1 flex flex-col min-h-0">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                  <ImageIcon size={14} className="text-slate-300" /> 1. Referensi Gambar
+                </label>
+                <div className="lg:flex-1 min-h-0">
+                  <ImageUploader 
+                    label="Pilih Foto Kualitas Rendah" 
+                    image={sourceImage} 
+                    onImageSelect={setSourceImage} 
+                    aspectRatio="9-16" 
+                    labelInside 
+                  />
+                </div>
+              </div>
 
-          {/* Aspect Ratio Selection */}
-          <div className="space-y-3">
-            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <ImageIcon size={14} className="text-slate-300" /> 2. Pilih Aspek Rasio
-            </label>
-            <div className="grid grid-cols-5 gap-2">
-              {ratios.map((r) => (
-                <button
-                  key={r.value}
-                  onClick={() => setAspectRatio(r.value)}
-                  className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all duration-300 aspect-square ${
-                    aspectRatio === r.value 
-                      ? 'scale-105' 
-                      : 'border-slate-100 bg-slate-50/50 text-slate-400 hover:border-slate-200 hover:bg-white'
-                  }`}
-                  style={{
-                    backgroundColor: aspectRatio === r.value ? primaryColor : undefined,
-                    color: aspectRatio === r.value ? 'white' : undefined,
-                    borderColor: aspectRatio === r.value ? primaryColor : undefined,
+              {/* Model Selection */}
+              <div className="shrink-0 space-y-2">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Zap size={14} className="text-slate-300" /> 2. Pilih Mesin AI
+                </label>
+                <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-slate-100 rounded-2xl">
+                  {[
+                    { id: 'gemini-2.5-flash-image', label: 'NANO 1' },
+                    { id: 'gemini-3-flash-image-preview', label: 'NANO 2' },
+                    { id: 'gemini-3-pro-image-preview', label: 'NANO PRO' },
+                    { id: 'gemini-flash-latest', label: 'FLASH' }
+                  ].map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => setModelId(m.id)}
+                      className={`py-2 rounded-xl text-[10px] font-black uppercase transition-all ${modelId === m.id ? 'bg-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                      style={{ color: modelId === m.id ? primaryColor : undefined }}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[8px] text-slate-400 font-medium italic mt-1 bg-slate-50 p-2 rounded-lg">
+                  * Gunakan Nano 1 jika muncul error.
+                </p>
+              </div>
+            </div>
+
+            {/* Column 2: Prompts */}
+            <div className="lg:col-span-3 flex flex-col gap-4 lg:h-full lg:overflow-hidden pt-6 lg:pt-0 lg:px-4 lg:border-r lg:border-slate-200">
+              <div className="flex-1 flex flex-col min-h-0">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                  <Sparkles size={14} className="text-slate-300" /> 3. Instruksi HD
+                </label>
+                <div className="flex-1 min-h-0 relative">
+                  <textarea
+                    value={customPrompt}
+                    onChange={(e) => setCustomPrompt(e.target.value)}
+                    placeholder="Misal: Perjelas detail mata..."
+                    className="w-full h-full p-4 bg-slate-50 border-2 border-slate-200 rounded-[32px] text-xs font-medium focus:border-slate-400 focus:outline-none resize-none transition-all shadow-inner"
+                  />
+                </div>
+              </div>
+
+              <div className="shrink-0 flex flex-col min-h-0 pt-4">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                  <X size={14} className="text-slate-300" /> 4. Negative Prompt
+                </label>
+                <textarea
+                  value={negativePrompt}
+                  onChange={(e) => setNegativePrompt(e.target.value)}
+                  placeholder="Misal: blur, noise..."
+                  className="w-full h-[100px] p-4 bg-slate-50 border-2 border-slate-200 rounded-[24px] text-xs font-medium focus:border-slate-400 focus:outline-none resize-none transition-all shadow-inner"
+                />
+              </div>
+
+              {/* Mobile Generate Button */}
+              <div className="lg:hidden pt-4">
+                <button 
+                  onClick={handleUpscale}
+                  disabled={processing.isProcessing || !sourceImage}
+                  className="w-full py-5 rounded-3xl text-white font-black uppercase tracking-[0.2em] text-sm shadow-xl transition-all active:scale-95 disabled:opacity-30 flex items-center justify-center gap-3"
+                  style={{ 
+                    backgroundColor: (processing.isProcessing || !sourceImage) ? '#cbd5e1' : primaryColor 
                   }}
                 >
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className={`${r.class} border-2 border-current rounded-[2px] flex items-center justify-center text-[6px] font-black leading-none ${
-                      ['9:16', '3:4'].includes(r.value) ? 'h-full w-auto' : 'w-full h-auto'
-                    }`}>
-                      <span className={['9:16', '3:4'].includes(r.value) ? '-rotate-90' : ''}>
-                        {r.label}
-                      </span>
-                    </div>
-                  </div>
+                  TINGKATKAN
                 </button>
-              ))}
+              </div>
             </div>
-          </div>
 
-          <div className="">
-            <button
-              onClick={handleUpscale}
-              disabled={processing.isProcessing || !sourceImage}
-              className="w-full disabled:bg-slate-300 text-white py-5 rounded-[28px] font-black uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center group relative overflow-hidden"
-              style={{ backgroundColor: processing.isProcessing || !sourceImage ? undefined : primaryColor }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
-              {processing.isProcessing ? (
-                <span className="relative z-10">UPSCALE IN PROGRESS...</span>
-              ) : (
-                <span className="text-lg relative z-10">TAJAMKAN FOTO</span>
-              )}
-            </button>
-          </div>
-
-          {/* Result Section */}
-          <div className="space-y-4 pt-4 border-t border-slate-100">
-            <div className="flex items-center justify-between">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <ImageIcon size={14} className="text-slate-300" /> Hasil Foto
-              </label>
-            </div>
-            
-            <div 
-              className={`w-full max-w-[280px] mx-auto bg-white border-2 border-dashed rounded-[32px] flex items-center justify-center overflow-hidden relative group transition-all duration-500 ${
-                aspectRatio === '1:1' ? 'aspect-square' :
-                aspectRatio === '3:4' ? 'aspect-[3/4]' :
-                aspectRatio === '4:3' ? 'aspect-[4/3]' :
-                aspectRatio === '9:16' ? 'aspect-[9/16]' :
-                'aspect-[16/9]'
-              }`}
-              style={{ 
-                borderColor: resultImage ? 'white' : `${primaryColor}40`,
-                backgroundColor: resultImage ? 'white' : undefined
-              }}
-            >
-              <AnimatePresence mode="wait">
-                {processing.isProcessing ? (
-                  <motion.div key="loading" className="absolute inset-0 flex items-center justify-center z-30">
-                    <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-16 h-16 object-contain animate-spin" alt="Logo" />
-                  </motion.div>
-                ) : resultImage ? (
-                  <motion.div key="result" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full h-full relative select-none touch-none">
-                    <img src={sourceImage!} className="absolute inset-0 w-full h-full object-cover grayscale opacity-30" alt="Original" />
-                    <div className="absolute inset-0 w-full h-full pointer-events-none" style={{ clipPath: `inset(0 0 0 ${sliderPos}%)` }}>
-                      <img src={resultImage} className="absolute inset-0 w-full h-full object-cover" alt="Result" />
-                    </div>
-                    <input type="range" min="0" max="100" value={sliderPos} onChange={(e) => setSliderPos(Number(e.target.value))} className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20" />
-                    <div className="absolute top-0 bottom-0 w-[2px] bg-white z-10 pointer-events-none" style={{ left: `${sliderPos}%` }}>
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-2xl flex items-center justify-center border-2" style={{ borderColor: primaryColor }}>
-                        <div className="flex gap-0.5">
-                          <div className="w-0.5 h-3 rounded-full" style={{ backgroundColor: primaryColor }} />
-                          <div className="w-0.5 h-3 rounded-full" style={{ backgroundColor: primaryColor }} />
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-12 text-center opacity-40">
-                    <div className="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center mb-4">
-                      <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-12 h-12 object-contain grayscale opacity-50" alt="Logo" />
-                    </div>
-                    <p className="text-xs font-black uppercase tracking-widest">Belum Ada Hasil</p>
+            {/* Column 3: Result Area */}
+            <div className="lg:col-span-6 flex flex-col gap-4 lg:h-full lg:overflow-hidden pt-8 lg:pt-0 lg:pl-4">
+              <div className="flex items-center justify-between shrink-0">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <ImageIcon size={14} className="text-slate-300" /> Rasio
+                  </label>
+                  
+                  {/* Aspect Ratio Selection */}
+                  <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 ml-4">
+                    {ratios.map((r) => (
+                      <button
+                        key={r.value}
+                        onClick={() => setAspectRatio(r.value)}
+                        className={`px-2 py-1 rounded-md text-[8px] font-black transition-all ${aspectRatio === r.value ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400'}`}
+                      >
+                        {r.label}
+                      </button>
+                    ))}
                   </div>
-                )}
-              </AnimatePresence>
-            </div>
-            
-            {/* Action Buttons */}
-            <div className="grid grid-cols-5 gap-2 max-w-[360px] mx-auto">
-              <button
-                onClick={() => setShowPreview(true)}
-                disabled={!resultImage || processing.isProcessing}
-                className={`flex items-center justify-center py-4 bg-white border-2 rounded-2xl transition-all ${
-                  !resultImage || processing.isProcessing 
-                    ? 'opacity-30 border-slate-50 cursor-not-allowed' 
-                    : 'border-slate-100 hover:border-slate-200'
-                }`}
-                style={{ color: primaryColor }}
-                title="Preview"
-              >
-                <Eye size={20} />
-              </button>
-              <button
-                onClick={() => setIsCropping(true)}
-                disabled={!resultImage || processing.isProcessing}
-                className={`flex items-center justify-center py-4 bg-white border-2 rounded-2xl transition-all ${
-                  !resultImage || processing.isProcessing 
-                    ? 'opacity-30 border-slate-50 cursor-not-allowed' 
-                    : 'border-slate-100 hover:border-slate-200'
-                }`}
-                style={{ color: primaryColor }}
-                title="Crop"
-              >
-                <Scissors size={20} />
-              </button>
-              <button
-                onClick={handleSharpen}
-                disabled={!resultImage || processing.isProcessing}
-                className={`flex items-center justify-center py-4 bg-white border-2 rounded-2xl transition-all ${
-                  !resultImage || processing.isProcessing 
-                    ? 'opacity-30 border-slate-50 cursor-not-allowed' 
-                    : 'border-slate-100 hover:border-slate-200'
-                }`}
-                style={{ color: primaryColor }}
-                title="Tajamkan"
-              >
-                <Zap size={20} />
-              </button>
-              <button
-                onClick={handleResetResult}
-                disabled={!resultImage || processing.isProcessing || resultImage === originalResultImage}
-                className={`flex items-center justify-center py-4 bg-white border-2 rounded-2xl transition-all ${
-                  !resultImage || processing.isProcessing || resultImage === originalResultImage
-                    ? 'opacity-30 border-slate-50 cursor-not-allowed' 
-                    : 'border-slate-100 hover:border-slate-200'
-                }`}
-                style={{ color: primaryColor }}
-                title="Reset"
-              >
-                <Recycle size={20} />
-              </button>
-              <button
-                onClick={handleDownload}
-                disabled={!resultImage || processing.isProcessing}
-                className={`flex items-center justify-center py-4 rounded-2xl transition-all shadow-lg shadow-current/20 ${
-                  !resultImage || processing.isProcessing 
-                    ? 'bg-slate-300 cursor-not-allowed' 
-                    : 'hover:scale-105 active:scale-95'
-                }`}
-                style={{ backgroundColor: !resultImage || processing.isProcessing ? undefined : primaryColor, color: 'white' }}
-                title="Simpan"
-              >
-                <Download size={20} />
-              </button>
+                </div>
+              
+              <div className="lg:flex-1 flex items-center justify-center min-h-0 w-full overflow-hidden">
+                <div 
+                  className={`bg-slate-50 border-2 border-dashed rounded-[24px] flex items-center justify-center overflow-hidden relative group transition-all duration-500 shadow-inner ${
+                    aspectRatio === '1:1' ? 'aspect-square' :
+                    aspectRatio === '3:4' ? 'aspect-[3/4]' :
+                    aspectRatio === '4:3' ? 'aspect-[4/3]' :
+                    aspectRatio === '9:16' ? 'aspect-[9/16]' :
+                    'aspect-[16/9]'
+                  }`}
+                  style={{ 
+                    borderColor: resultImage ? 'white' : `${primaryColor}40`,
+                    backgroundColor: resultImage ? 'white' : undefined,
+                    width: '100%',
+                    height: 'auto',
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    aspectRatio: aspectRatio.replace(':', '/')
+                  }}
+                >
+                  <AnimatePresence mode="wait">
+                    {processing.isProcessing ? (
+                      <motion.div
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-white/80 backdrop-blur-sm"
+                      >
+                        <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-16 h-16 object-contain animate-spin" alt="Logo" />
+                        <p className="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">{processing.progress}</p>
+                      </motion.div>
+                    ) : resultImage ? (
+                      <motion.div
+                        key="result"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="w-full h-full relative"
+                      >
+                        {/* BEFORE/AFTER SLIDER */}
+                        <div className="absolute inset-0">
+                          <img src={resultImage} alt="Result" className="w-full h-full object-cover" />
+                        </div>
+                        <div 
+                          className="absolute inset-0 overflow-hidden"
+                          style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
+                        >
+                          <img src={sourceImage!} alt="Original" className="w-full h-full object-cover grayscale opacity-50" />
+                        </div>
+                        
+                        {/* SLIDER HANDLE */}
+                        <div 
+                          className="absolute inset-y-0 w-1 bg-white shadow-[0_0_10px_rgba(0,0,0,0.3)] cursor-ew-resize z-10"
+                          style={{ left: `${sliderPos}%` }}
+                        >
+                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full shadow-xl flex items-center justify-center border-4 border-slate-100">
+                            <div className="flex gap-0.5">
+                              <div className="w-0.5 h-3 bg-slate-300 rounded-full" />
+                              <div className="w-0.5 h-3 bg-slate-300 rounded-full" />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="100" 
+                          value={sliderPos} 
+                          onChange={(e) => setSliderPos(parseInt(e.target.value))}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20"
+                        />
+
+                        {/* LABELS */}
+                        <div className="absolute bottom-6 left-6 px-3 py-1 bg-black/50 backdrop-blur-md rounded-full text-[10px] font-black text-white uppercase tracking-widest z-30">
+                          RAW
+                        </div>
+                        <div className="absolute bottom-6 right-6 px-3 py-1 bg-white/50 backdrop-blur-md rounded-full text-[10px] font-black text-slate-900 uppercase tracking-widest z-30">
+                          4K ULTRA
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-12 text-center opacity-40">
+                        <div className="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center mb-4">
+                          <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-12 h-12 object-contain grayscale opacity-50" alt="Logo" />
+                        </div>
+                        <p className="text-xs font-black uppercase tracking-widest">Belum Ada Hasil</p>
+                      </div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+
+                {/* Action Buttons */}
+                <div className="grid grid-cols-5 lg:grid-cols-7 gap-2 lg:gap-3 w-full mx-auto shrink-0">
+                  <button 
+                    onClick={handleUpscale}
+                    disabled={processing.isProcessing || !sourceImage}
+                    title="Generate"
+                    className="hidden lg:flex order-5 lg:order-first col-span-1 lg:col-span-2 py-4 rounded-2xl border-2 text-white items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg disabled:opacity-30"
+                    style={{ 
+                      backgroundColor: processing.isProcessing || !sourceImage ? '#cbd5e1' : primaryColor, 
+                      borderColor: processing.isProcessing || !sourceImage ? '#cbd5e1' : primaryColor 
+                    }}
+                  >
+                    <span className="font-black uppercase tracking-widest text-[10px]">TINGKATKAN</span>
+                  </button>
+
+                  <button 
+                    onClick={() => setShowPreview(true)}
+                    disabled={processing.isProcessing || !resultImage}
+                    title="Preview"
+                    className="order-1 lg:order-2 py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
+                  >
+                    <Eye size={20} />
+                  </button>
+                  <button 
+                    onClick={() => setIsCropping(true)}
+                    disabled={processing.isProcessing || !resultImage}
+                    title="Crop"
+                    className="order-2 lg:order-3 py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
+                  >
+                    <Scissors size={20} />
+                  </button>
+                  <button 
+                    onClick={handleSharpen}
+                    disabled={processing.isProcessing || !resultImage}
+                    title="Sharpen"
+                    className="order-3 lg:order-4 py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
+                  >
+                    <Zap size={20} />
+                  </button>
+                  <button 
+                    onClick={handleResetResult}
+                    disabled={processing.isProcessing || !resultImage || resultImage === originalResultImage}
+                    title="Reset"
+                    className="order-4 lg:order-5 py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
+                  >
+                    <Recycle size={20} />
+                  </button>
+                  <button 
+                    onClick={handleDownload}
+                    disabled={processing.isProcessing || !resultImage}
+                    title="Download"
+                    className="order-6 lg:order-6 py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
+                  >
+                    <Download size={20} />
+                  </button>
+                </div>
+
+                {/* Error Message */}
+                <AnimatePresence>
+                  {processing.error && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 20 }}
+                      className="bg-rose-50 border-2 border-rose-100 p-5 rounded-2xl text-rose-600 text-[10px] font-black text-center uppercase tracking-widest shrink-0"
+                    >
+                      {processing.error}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
             </div>
           </div>
-
-          {/* Error Message */}
-          <AnimatePresence>
-            {processing.error && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="bg-rose-50 border-2 border-rose-100 p-5 rounded-2xl text-rose-600 text-[10px] font-black text-center uppercase tracking-widest">
-                {processing.error}
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </div>
 

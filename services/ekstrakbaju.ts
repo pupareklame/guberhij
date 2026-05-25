@@ -1,7 +1,6 @@
 
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-
-const getAI = () => new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+import { getAI } from "./geminiService";
 
 const cleanBase64 = (base64: string) => {
   return base64.split(',')[1] || base64;
@@ -27,15 +26,16 @@ const extractImageFromResponse = (response: GenerateContentResponse) => {
   throw new Error("Data visual tidak ditemukan dalam respon AI. Coba lagi dalam beberapa saat.");
 };
 
-export const extractClothing = async (image: string, target: 'TOP' | 'BOTTOM' | 'FULL', aspectRatio: string = '1:1') => {
+export const extractClothing = async (image: string, target: 'TOP' | 'BOTTOM' | 'FULL', aspectRatio: string = '1:1', view: 'FRONT' | 'BACK' = 'FRONT') => {
   const ai = getAI();
   const targetDesc = target === 'FULL' ? 'full-body garment (like a dress, gamis, or robe)' : target === 'TOP' ? 'top garment' : 'bottom garment';
+  const viewDesc = view === 'BACK' ? 'the BACK VIEW of' : '';
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
     contents: [{ 
       parts: [
         { inlineData: { data: cleanBase64(image), mimeType: 'image/png' } },
-        { text: `[EXTRACT TASK]: Extract the ${targetDesc} and display it on a pure white background. Remove the person. High resolution, 8k, professional product photography.` }
+        { text: `[EXTRACT TASK]: Extract ${viewDesc} the ${targetDesc} and display it on a pure white background. Remove the person. High resolution, 8k, professional product photography.` }
       ] 
     }],
     config: { 

@@ -1,90 +1,58 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
   Sparkles, 
   Download, 
-  Maximize2, 
-  Crop, 
   RefreshCw, 
   Image as ImageIcon,
-  ChevronRight,
-  Info,
-  CheckCircle2,
-  AlertCircle,
   Zap,
-  Camera,
-  Layers,
   Trash2,
   X,
-  Send,
   Maximize,
   Scissors,
   Eye,
   Recycle,
   Wand2,
-  Target
+  Check,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import Cropper from 'react-easy-crop';
 import { generateRealImage, upscaleImage, enhancePrompt } from '../services/buat';
 import { useTheme } from '../src/contexts/ThemeContext';
+import ImageUploader from '../components/ImageUploader';
 
 // --- Types ---
 type AspectRatio = '1:1' | '16:9' | '9:16' | '4:3' | '3:4';
 
-interface GeneratedImage {
-  url: string;
-  prompt: string;
-  aspectRatio: AspectRatio;
-  timestamp: number;
-}
-
-// --- Components ---
-
-const Header = ({ primaryColor }: { primaryColor: string }) => (
-  <header 
-    className="p-4 border-b border-white/10 rounded-b-[40px] shadow-xl sticky top-0 z-50 lg:hidden"
-    style={{ 
-      background: `linear-gradient(135deg, ${primaryColor}, color-mix(in srgb, ${primaryColor}, black 20%))`,
-    }}
-  >
-    <div className="flex items-center justify-center">
-      <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/20 text-white shadow-inner border border-white/30 backdrop-blur-sm">
-          <Sparkles size={16} />
-        </div>
-        <div className="flex flex-col">
-          <h1 className="text-base font-black text-white tracking-tight leading-none mb-0.5 uppercase">GUBER BUAT AI</h1>
-          <p className="text-[7px] font-bold uppercase tracking-[0.3em] leading-none text-white/60">Photorealistic Masterpiece</p>
-        </div>
-      </div>
-    </div>
-  </header>
-);
-
-const SectionTitle = ({ icon: Icon, title, subtitle, primaryColor }: { icon: any, title: string, subtitle?: string, primaryColor: string }) => (
-  <div className="mb-3">
-    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-      <Icon size={14} className="text-slate-300" /> {title}
-    </label>
-    {subtitle && <p className="text-[9px] text-slate-400 mt-0.5 font-medium">{subtitle}</p>}
-  </div>
-);
-
-const BuatApp = () => {
+const BuatApp: React.FC = () => {
   const { primaryColor } = useTheme();
+  
   // --- State ---
   const [prompt, setPrompt] = useState('');
-  const [aspectRatio, setAspectRatio] = useState<AspectRatio>('1:1');
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>('9:16');
+  const [sourceImage, setSourceImage] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [resultImage, setResultImage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isUpscaling, setIsUpscaling] = useState(false);
-  const [isEnhancing, setIsEnhancing] = useState(false);
-  const [selectedEngine, setSelectedEngine] = useState('gemini-2.5-flash-image');
+  const [initialResultImage, setInitialResultImage] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  
+  const [processing, setProcessing] = useState<{
+    isProcessing: boolean;
+    error: string | null;
+    progress: string;
+  }>({
+    isProcessing: false,
+    error: null,
+    progress: '',
+  });
 
-  const engines = [
-    { id: 'gemini-2.5-flash-image', name: '2.5 Flash', desc: 'Stable', icon: Sparkles },
-    { id: 'imagen-4.0-generate-001', name: 'Imagen 4', desc: 'High Quality', icon: Camera }
+  const ratios = [
+    { label: '1:1', value: '1:1' },
+    { label: '16:9', value: '16:9' },
+    { label: '9:16', value: '9:16' },
+    { label: '4:3', value: '4:3' },
+    { label: '3:4', value: '3:4' },
   ];
   
   // --- Cropping State ---
@@ -93,125 +61,53 @@ const BuatApp = () => {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
-  // --- Refs ---
-  const resultRef = useRef<HTMLDivElement>(null);
-
   // --- Handlers ---
   const handleGenerate = async () => {
     if (!prompt.trim()) {
-      setError("Silakan masukkan deskripsi gambar.");
+      setProcessing(p => ({ ...p, error: "Silakan masukkan deskripsi gambar." }));
       return;
     }
 
-    setIsGenerating(true);
-    setError(null);
+    setResultImage(null);
+    setInitialResultImage(null);
+    setProcessing({ 
+      isProcessing: true, 
+      error: null, 
+      progress: isEditMode && sourceImage ? 'Sedang Mengedit Gambar...' : 'Imajinasi AI Sedang Berjalan...' 
+    });
+
     try {
-      const result = await generateRealImage(prompt, aspectRatio, selectedEngine);
+      const result = await generateRealImage(prompt, aspectRatio, isEditMode ? (sourceImage || undefined) : undefined);
       setResultImage(result);
-      // Scroll to result on mobile
-      if (window.innerWidth < 768) {
-        resultRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }
+      setInitialResultImage(result);
+      setProcessing({ isProcessing: false, error: null, progress: '' });
     } catch (err: any) {
       let errorMessage = err.message || "Gagal membuat gambar.";
-      const lowerError = errorMessage.toLowerCase();
-      if (
-        lowerError.includes('permission denied') || 
-        lowerError.includes('requested entity was not found') ||
-        lowerError.includes('failed to call') ||
-        lowerError.includes('api key')
-      ) {
-        setError("AKSES_DITOLAK");
-      } else {
-        setError(errorMessage);
-      }
-    } finally {
-      setIsGenerating(false);
+      setProcessing({ isProcessing: false, error: errorMessage, progress: '' });
     }
   };
 
   const handleUpscale = async () => {
     if (!resultImage) return;
-
-    setIsUpscaling(true);
+    setProcessing({ isProcessing: true, error: null, progress: 'HD Upscale Image...' });
     try {
-      const upscaled = await upscaleImage(resultImage, aspectRatio, selectedEngine);
-      setResultImage(upscaled);
-    } catch (err: any) {
-      let errorMessage = err.message || "Gagal menajamkan gambar.";
-      const lowerError = errorMessage.toLowerCase();
-      if (
-        lowerError.includes('permission denied') || 
-        lowerError.includes('requested entity was not found') ||
-        lowerError.includes('failed to call') ||
-        lowerError.includes('api key')
-      ) {
-        setError("AKSES_DITOLAK");
-      } else {
-        setError(errorMessage);
-      }
-    } finally {
-      setIsUpscaling(false);
+      const sharpened = await upscaleImage(resultImage, aspectRatio);
+      setResultImage(sharpened);
+      setProcessing({ isProcessing: false, error: null, progress: '' });
+    } catch (e: any) {
+      setProcessing({ isProcessing: false, error: e.message || 'Gagal menajamkan gambar.', progress: '' });
     }
   };
-  
+
   const handleEnhance = async () => {
-    if (!prompt.trim() || isEnhancing) return;
-    setIsEnhancing(true);
-    setError(null);
+    if (!prompt.trim() || processing.isProcessing) return;
+    setProcessing(p => ({ ...p, isProcessing: true, progress: 'Menyempurnakan Prompt...' }));
     try {
       const enhanced = await enhancePrompt(prompt);
       setPrompt(enhanced);
+      setProcessing(p => ({ ...p, isProcessing: false, progress: '' }));
     } catch (err: any) {
-      console.error(err);
-      let errorMessage = err.message || "Gagal memperbagus prompt.";
-      const lowerError = errorMessage.toLowerCase();
-      if (
-        lowerError.includes('permission denied') || 
-        lowerError.includes('requested entity was not found') ||
-        lowerError.includes('failed to call') ||
-        lowerError.includes('api key')
-      ) {
-        setError("AKSES_DITOLAK");
-      }
-    } finally {
-      setIsEnhancing(false);
-    }
-  };
-
-  const handlePresetClick = async (p: string) => {
-    setPrompt(p);
-    // We need to use the value directly because setPrompt is async
-
-    // Check for API Key if using Gemini 3.x
-    if (selectedEngine.includes('gemini-3')) {
-      try {
-        const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-        if (!hasKey) {
-          await (window as any).aistudio.openSelectKey();
-        }
-      } catch (e) {
-        console.error("Key selection error:", e);
-      }
-    }
-
-    setIsGenerating(true);
-    setError(null);
-    try {
-      const result = await generateRealImage(p, aspectRatio, selectedEngine);
-      setResultImage(result);
-      if (window.innerWidth < 768) {
-        resultRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }
-    } catch (err: any) {
-      if (err.message?.includes("Requested entity was not found")) {
-        setError("Silakan pilih API Key di sidebar untuk menggunakan mesin ini.");
-        try { await (window as any).aistudio.openSelectKey(); } catch(e){}
-      } else {
-        setError(err.message || "Gagal membuat gambar.");
-      }
-    } finally {
-      setIsGenerating(false);
+      setProcessing(p => ({ ...p, isProcessing: false, error: "Gagal memperbagus prompt.", progress: '' }));
     }
   };
 
@@ -219,415 +115,432 @@ const BuatApp = () => {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
-  const getCroppedImage = async () => {
-    if (!resultImage || !croppedAreaPixels) return;
+  const createImage = (url: string): Promise<HTMLImageElement> =>
+    new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = (error) => reject(error);
+      if (!url.startsWith('data:')) {
+        image.crossOrigin = 'anonymous';
+      }
+      image.src = url;
+    });
+
+  const handleCropSave = async () => {
+    if (!resultImage || !croppedAreaPixels || croppedAreaPixels.width === 0) {
+      setIsCropping(false);
+      return;
+    }
+
+    setProcessing(p => ({ ...p, isProcessing: true, progress: 'Cropping Image...' }));
     
-    const image = new Image();
-    image.src = resultImage;
-    await new Promise(resolve => image.onload = resolve);
-
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    canvas.width = croppedAreaPixels.width;
-    canvas.height = croppedAreaPixels.height;
-
-    ctx.drawImage(
-      image,
-      croppedAreaPixels.x,
-      croppedAreaPixels.y,
-      croppedAreaPixels.width,
-      croppedAreaPixels.height,
-      0,
-      0,
-      croppedAreaPixels.width,
-      croppedAreaPixels.height
-    );
-
-    setResultImage(canvas.toDataURL('image/png'));
-    setIsCropping(false);
+    try {
+      const { width, height, x, y } = croppedAreaPixels;
+      const image = await createImage(resultImage);
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error("Could not get canvas context");
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(image, x, y, width, height, 0, 0, width, height);
+      setResultImage(canvas.toDataURL('image/png'));
+      setIsCropping(false);
+      setProcessing(p => ({ ...p, isProcessing: false, progress: '' }));
+    } catch (e: any) {
+      setProcessing(p => ({ ...p, isProcessing: false, error: 'Gagal memotong gambar', progress: '' }));
+      setIsCropping(false);
+    }
   };
 
   const handleDownload = () => {
     if (!resultImage) return;
     const link = document.createElement('a');
     link.href = resultImage;
-    link.download = `guber-buat-${Date.now()}.png`;
+    link.download = `guber-visual-${Date.now()}.png`;
     link.click();
   };
 
-  const clearResult = () => {
-    setResultImage(null);
-    setError(null);
-  };
-
   const handleReset = () => {
-    setResultImage(null);
-    setError(null);
     setPrompt('');
-    setAspectRatio('1:1');
+    setResultImage(null);
+    setInitialResultImage(null);
+    setSourceImage(null);
+    setProcessing({ isProcessing: false, error: null, progress: '' });
   };
-
-  // --- Presets ---
-  const presets = [
-    "Pohon cermai berbuah kacang tanah yang sangat lebat di tengah hutan tropis",
-    "Mobil sport futuristik yang terbuat dari kristal transparan di jalanan Tokyo",
-    "Seekor kucing raksasa sedang tidur di atas gedung pencakar langit Jakarta",
-    "Air terjun yang mengalirkan susu putih di antara tebing cokelat raksasa",
-    "Astronot sedang memancing di tepi danau lava di planet Mars"
-  ];
 
   return (
-    <div className="h-full bg-slate-50/50 overflow-y-auto lg:overflow-hidden custom-scrollbar">
-      <div className="max-w-2xl lg:max-w-7xl mx-auto min-h-full lg:h-screen bg-white flex flex-col border-x border-slate-100 shadow-sm">
-        <Header primaryColor={primaryColor} />
-
-        <div className="p-4 lg:p-6 lg:flex-1 lg:overflow-hidden">
-          <div className="lg:grid lg:grid-cols-12 lg:gap-6 lg:h-full lg:overflow-hidden">
-            {/* Left Column: Inputs */}
-            <div className="lg:col-span-4 space-y-6 md:space-y-8 lg:h-full lg:overflow-y-auto lg:pr-6 custom-scrollbar">
-              {/* Prompt Input */}
-              <div className="space-y-3">
-                <SectionTitle 
-                  icon={Zap} 
-                  title="1. Deskripsi Gambar" 
-                  subtitle="Jelaskan apa yang ingin Anda buat. Imajinasi liar sangat disarankan." 
-                  primaryColor={primaryColor}
-                />
-                
-                <div className="relative group">
-                  <textarea
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="Contoh: Pohon cermai berbuah kacang tanah yang lebat..."
-                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-[24px] p-5 pb-14 text-[12px] font-semibold outline-none min-h-[140px] resize-none transition-all placeholder:text-slate-300 focus:bg-white focus:border-slate-200"
-                  />
-                  <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center">
-                    <button
-                      onClick={handleEnhance}
-                      disabled={!prompt.trim() || isEnhancing}
-                      className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-sm disabled:opacity-50"
-                      style={{ color: primaryColor }}
-                    >
-                      {isEnhancing ? (
-                        <RefreshCw size={14} className="animate-spin" />
-                      ) : (
-                        <Wand2 size={14} />
-                      )}
-                      AI Detail
-                    </button>
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => setPrompt('')}
-                        className="p-2 bg-white hover:bg-slate-50 border border-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors shadow-sm"
-                        title="Hapus"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+    <div className="lg:h-screen bg-slate-50/50 lg:overflow-hidden min-h-screen custom-scrollbar overflow-x-hidden">
+      <div className="max-w-2xl lg:max-w-full mx-auto lg:h-full bg-white flex flex-col border-x border-slate-100 shadow-sm">
+        {/* Header - Hidden on Desktop */}
+        <div 
+          className="p-4 border-b border-white/10 rounded-b-[40px] shadow-xl z-20 lg:hidden"
+          style={{ 
+            background: `linear-gradient(135deg, ${primaryColor}, color-mix(in srgb, ${primaryColor}, black 20%))`,
+          }}
+        >
+          <div className="flex items-center justify-center">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/20 text-white shadow-inner border border-white/30 backdrop-blur-sm">
+                <Sparkles size={16} />
               </div>
-
-              {/* Aspect Ratio Selection */}
-              <div className="space-y-3">
-                <SectionTitle 
-                  icon={Maximize} 
-                  title="2. Pilih Aspek Rasio" 
-                  subtitle="Sesuaikan dimensi hasil karya Anda." 
-                  primaryColor={primaryColor}
-                />
-                
-                <div className="grid grid-cols-5 gap-1.5 md:gap-2">
-                  {(['1:1', '16:9', '9:16', '4:3', '3:4'] as AspectRatio[]).map((ratio) => (
-                    <button
-                      key={ratio}
-                      onClick={() => setAspectRatio(ratio)}
-                      className={`flex flex-col items-center justify-center p-2 md:p-3 rounded-xl md:rounded-2xl border-2 transition-all duration-300 aspect-square ${
-                        aspectRatio === ratio 
-                          ? 'scale-105' 
-                          : 'border-slate-100 bg-slate-50/50 text-slate-400 hover:border-slate-200 hover:bg-white'
-                      }`}
-                      style={{
-                        backgroundColor: aspectRatio === ratio ? primaryColor : undefined,
-                        color: aspectRatio === ratio ? 'white' : undefined,
-                        borderColor: aspectRatio === ratio ? primaryColor : undefined,
-                      }}
-                    >
-                      <div className="w-full h-full flex items-center justify-center">
-                        <div className={`border-2 border-current rounded-[2px] flex items-center justify-center text-[5px] md:text-[6px] font-black leading-none ${
-                          ratio === '1:1' ? 'w-5 h-5 md:w-6 md:h-6' :
-                          ratio === '16:9' ? 'w-full h-auto aspect-video' :
-                          ratio === '9:16' ? 'h-full w-auto aspect-[9/16]' :
-                          ratio === '4:3' ? 'w-full h-auto aspect-[4/3]' : 'h-full w-auto aspect-[3/4]'
-                        }`}>
-                          <span className={['9:16', '3:4'].includes(ratio) ? '-rotate-90' : ''}>
-                            {ratio}
-                          </span>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
+              <div className="flex flex-col">
+                <h1 className="text-base font-black text-white tracking-tight leading-none mb-0.5 uppercase">BUAT VISUAL AI</h1>
+                <p className="text-[7px] font-bold uppercase tracking-[0.3em] leading-none text-white/60">Creative Image Engine</p>
               </div>
-
-              {/* Engine Selection */}
-              <div className="space-y-3">
-                <SectionTitle 
-                  icon={Zap} 
-                  title="3. Mesin AI Visual" 
-                  subtitle="Pilih mesin AI untuk hasil yang berbeda." 
-                  primaryColor={primaryColor}
-                />
-                <div className="grid grid-cols-3 gap-2">
-                  {engines.map((engine) => (
-                    <button
-                      key={engine.id}
-                      onClick={() => setSelectedEngine(engine.id)}
-                      className={`flex flex-col items-center p-3 rounded-2xl border-2 transition-all ${
-                        selectedEngine === engine.id 
-                          ? 'bg-slate-900 border-slate-900 text-white shadow-lg' 
-                          : 'border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200'
-                      }`}
-                      style={{
-                        borderColor: selectedEngine === engine.id ? primaryColor : undefined,
-                        backgroundColor: selectedEngine === engine.id ? primaryColor : undefined,
-                      }}
-                    >
-                      <engine.icon size={16} className="mb-1" />
-                      <span className="text-[10px] font-black uppercase tracking-tighter">{engine.name}</span>
-                      <span className="text-[8px] font-bold opacity-60">{engine.desc}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Generate Button */}
-              <div className="">
-                <button
-                  onClick={handleGenerate}
-                  disabled={isGenerating || !prompt.trim()}
-                  className="w-full disabled:bg-slate-300 text-white py-5 rounded-[28px] font-black uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center group relative overflow-hidden shadow-lg"
-                  style={{ 
-                    backgroundColor: isGenerating || !prompt.trim() ? undefined : primaryColor,
-                  }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
-                  {isGenerating ? (
-                    <span className="relative z-10 flex items-center gap-2">
-                      <RefreshCw className="w-5 h-5 animate-spin" />
-                      SEDANG PROSES...
-                    </span>
-                  ) : (
-                    <span className="text-lg relative z-10 flex items-center gap-2">
-                      <Sparkles className="w-5 h-5" />
-                      HASILKAN KARYA
-                    </span>
-                  )}
-                </button>
-              </div>
-
-              {/* Presets (Moved here) */}
-              <div className="space-y-3 pt-4 border-t border-slate-100">
-                <SectionTitle 
-                  icon={Sparkles} 
-                  title="Inspirasi Cepat" 
-                  subtitle="Klik untuk langsung menghasilkan karya luar biasa." 
-                  primaryColor={primaryColor}
-                />
-                <div className="grid grid-cols-1 gap-2">
-                  {presets.map((p, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handlePresetClick(p)}
-                      disabled={isGenerating}
-                      className="w-full text-left text-[10px] px-5 py-3.5 bg-white hover:bg-slate-50 border-2 border-slate-100 hover:border-slate-200 rounded-2xl text-slate-600 font-bold transition-all shadow-sm flex items-center justify-between group disabled:opacity-50"
-                    >
-                      <span className="truncate mr-2">{p}</span>
-                      <ChevronRight size={14} className="text-slate-300 group-hover:text-slate-500 transition-colors shrink-0" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column: Result Section */}
-            <div className="lg:col-span-8 space-y-4 lg:pt-0 pt-8 border-t lg:border-t-0 border-slate-100 lg:h-full lg:flex lg:flex-col lg:justify-between lg:overflow-hidden" ref={resultRef}>
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <ImageIcon size={14} className="text-slate-300" /> Hasil Karya
-                </label>
-              </div>
-              
-              <div 
-                className={`w-full mx-auto bg-white border-2 border-dashed rounded-[24px] md:rounded-[32px] flex items-center justify-center overflow-hidden relative group transition-all duration-500 lg:h-full lg:max-h-[calc(100vh-200px)] lg:w-auto ${
-                  aspectRatio === '1:1' ? 'max-w-[280px] md:max-w-[320px] lg:max-w-full aspect-square' :
-                  aspectRatio === '16:9' ? 'max-w-[400px] md:max-w-[450px] lg:max-w-full aspect-[16/9]' :
-                  aspectRatio === '9:16' ? 'max-w-[240px] md:max-w-[280px] lg:max-w-full aspect-[9/16]' :
-                  aspectRatio === '4:3' ? 'max-w-[360px] md:max-w-[400px] lg:max-w-full aspect-[4/3]' : 'max-w-[260px] md:max-w-[300px] lg:max-w-full aspect-[3/4]'
-                }`}
-                style={{ 
-                  borderColor: resultImage ? 'white' : `${primaryColor}40`,
-                  backgroundColor: resultImage ? 'white' : undefined
-                }}
-              >
-                <AnimatePresence mode="wait">
-                  {isGenerating ? (
-                    <motion.div
-                      key="loading"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="absolute inset-0 flex flex-col items-center justify-center z-30"
-                    >
-                      <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-16 h-16 object-contain animate-spin" alt="Logo" />
-                    </motion.div>
-                  ) : resultImage ? (
-                    <motion.div
-                      key="result"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="w-full h-full relative"
-                    >
-                      {isCropping ? (
-                        <div className="relative w-full h-full bg-black">
-                          <Cropper
-                            image={resultImage}
-                            crop={crop}
-                            zoom={zoom}
-                            aspect={aspectRatio === '1:1' ? 1 : aspectRatio === '16:9' ? 16/9 : aspectRatio === '9:16' ? 9/16 : aspectRatio === '4:3' ? 4/3 : 3/4}
-                            onCropChange={setCrop}
-                            onCropComplete={onCropComplete}
-                            onZoomChange={setZoom}
-                          />
-                        </div>
-                      ) : (
-                        <img 
-                          src={resultImage} 
-                          alt="Generated" 
-                          className="w-full h-full object-contain bg-slate-50"
-                        />
-                      )}
-                    </motion.div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center p-12 text-center opacity-40">
-                      <div className="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center mb-4">
-                        <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-12 h-12 object-contain grayscale opacity-50" alt="Logo" />
-                      </div>
-                      <p className="text-xs font-black uppercase tracking-widest">Belum Ada Hasil</p>
-                    </div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Action Buttons */}
-              {resultImage && !isGenerating && (
-                <div className="grid grid-cols-4 gap-2 max-w-[280px] md:max-w-[320px] lg:max-w-full mx-auto mt-4">
-                  {isCropping ? (
-                    <>
-                      <button
-                        onClick={getCroppedImage}
-                        className="col-span-3 py-3 md:py-4 bg-white border-2 rounded-xl md:rounded-2xl transition-all border-slate-100 hover:border-slate-200 font-bold text-[9px] md:text-[10px] uppercase tracking-widest"
-                        style={{ color: primaryColor }}
-                      >
-                        Terapkan Potongan
-                      </button>
-                      <button
-                        onClick={() => setIsCropping(false)}
-                        className="col-span-1 py-3 md:py-4 bg-white border-2 rounded-xl md:rounded-2xl transition-all border-slate-100 hover:border-slate-200 flex items-center justify-center"
-                        style={{ color: primaryColor }}
-                      >
-                        <X size={18} className="md:w-5 md:h-5" />
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => setIsCropping(true)}
-                        className="flex items-center justify-center py-3 md:py-4 bg-white border-2 rounded-xl md:rounded-2xl transition-all border-slate-100 hover:border-slate-200"
-                        style={{ color: primaryColor }}
-                        title="Crop"
-                      >
-                        <Scissors size={18} className="md:w-5 md:h-5" />
-                      </button>
-                      
-                      <button
-                        onClick={handleUpscale}
-                        disabled={isUpscaling}
-                        className="flex items-center justify-center py-3 md:py-4 bg-white border-2 rounded-xl md:rounded-2xl transition-all border-slate-100 hover:border-slate-200 disabled:opacity-30"
-                        style={{ color: primaryColor }}
-                        title="Tajamkan"
-                      >
-                        {isUpscaling ? (
-                          <RefreshCw className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
-                        ) : (
-                          <Zap size={18} className="md:w-5 md:h-5" />
-                        )}
-                      </button>
-  
-                      <button
-                        onClick={handleDownload}
-                        className="flex items-center justify-center py-3 md:py-4 text-white rounded-xl md:rounded-2xl transition-all shadow-md"
-                        style={{ backgroundColor: primaryColor }}
-                        title="Download"
-                      >
-                        <Download size={18} className="md:w-5 md:h-5" />
-                      </button>
-  
-                      <button
-                        onClick={clearResult}
-                        className="flex items-center justify-center py-3 md:py-4 bg-white border-2 rounded-xl md:rounded-2xl transition-all border-slate-100 hover:border-red-100 hover:text-red-500 text-slate-400"
-                        title="Hapus"
-                      >
-                        <Trash2 size={18} className="md:w-5 md:h-5" />
-                      </button>
-                    </>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         </div>
 
-        {/* Error Message */}
-        <div className="px-4 md:px-8 pb-4">
-          <AnimatePresence>
-            {error && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className={`${error === 'AKSES_DITOLAK' ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-rose-50 border-rose-100 text-rose-600'} border-2 p-5 rounded-2xl text-[10px] font-black text-center uppercase tracking-widest flex flex-col gap-3`}
-              >
-                {error === 'AKSES_DITOLAK' ? (
-                  <>
-                    <div className="flex items-center justify-center gap-2">
-                      <AlertCircle size={16} className="text-amber-600" />
-                      <span>Google Meminta Aktivasi</span>
-                    </div>
-                    <p className="text-[8px] normal-case font-bold text-amber-800 leading-relaxed">
-                      Untuk menggunakan mesin 3.x, Google mewajibkan aktivasi kuota gratis. Klik tombol di bawah (Gratis & Tanpa Input Key).
-                    </p>
-                    <button 
-                      onClick={async () => {
-                        try {
-                          await (window as any).aistudio.openSelectKey();
-                          setError(null);
-                        } catch(e) {}
-                      }}
-                      className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-200"
+        <div className="p-4 lg:p-4 lg:flex-1 lg:overflow-hidden overflow-y-auto">
+          <div className="lg:grid lg:grid-cols-12 lg:gap-4 lg:h-full lg:overflow-hidden flex flex-col">
+            
+            {/* Column 1: Mode & Prompt */}
+            <div className="lg:col-span-3 flex flex-col gap-4 lg:h-full lg:overflow-hidden lg:pr-4 lg:border-r lg:border-slate-200">
+              
+              {/* Step 1: Edit Image Toggle */}
+              <div className="space-y-3 shrink-0">
+                <div className="flex items-center justify-between px-1">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <ImageIcon size={14} className="text-slate-300" /> 1. Edit Gambar
+                  </label>
+                  <button 
+                    onClick={() => setIsEditMode(!isEditMode)}
+                    className="transition-colors duration-300"
+                    style={{ color: isEditMode ? primaryColor : '#cbd5e1' }}
+                  >
+                    {isEditMode ? <ToggleRight size={32} /> : <ToggleLeft size={32} />}
+                  </button>
+                </div>
+                
+                <AnimatePresence>
+                  {isEditMode && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
                     >
-                      Aktifkan Kuota Gratis Sekarang
+                      <div className="p-2 bg-slate-50 rounded-[24px] border border-slate-100">
+                        <ImageUploader 
+                          onImageSelect={setSourceImage} 
+                          image={sourceImage}
+                          onClear={() => setSourceImage(null)}
+                          label="Foto Referensi"
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Step 2: Prompt Enhancement */}
+              <div className="flex-1 flex flex-col min-h-0">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 px-1">
+                    <Zap size={14} className="text-slate-300" /> 2. Deskripsi Gambar
+                  </label>
+                  <button 
+                    onClick={handleReset}
+                    className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-1.5 border border-slate-100"
+                  >
+                    <RefreshCw size={10} /> Reset
+                  </button>
+                </div>
+                <div className="relative flex-1 group">
+                  <textarea
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder="Bayangkan apapun, Biarkan AI mewujudkannya..."
+                    className="w-full h-full p-6 bg-slate-50 border-2 border-slate-100 rounded-[32px] text-sm font-semibold focus:border-slate-200 focus:bg-white outline-none resize-none transition-all shadow-inner placeholder:text-slate-300"
+                  />
+                  <div className="absolute bottom-4 right-4 flex gap-2">
+                    <button
+                      onClick={() => setPrompt('')}
+                      className="p-2.5 bg-white shadow-lg border border-slate-100 rounded-xl text-slate-400 hover:text-rose-500 transition-all"
+                      title="Bersihkan Teks"
+                    >
+                      <Trash2 size={16} />
                     </button>
-                  </>
-                ) : (
-                  error
+                    <button
+                      onClick={handleEnhance}
+                      disabled={!prompt.trim() || processing.isProcessing}
+                      className="p-2.5 bg-white shadow-lg border border-slate-100 rounded-xl text-slate-400 hover:text-slate-900 transition-all disabled:opacity-50"
+                      title="Sempurnakan dengan AI"
+                    >
+                      <Wand2 size={16} style={{ color: prompt.trim() ? primaryColor : undefined }} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile Generate Button */}
+              <div className="lg:hidden">
+                <button 
+                  onClick={handleGenerate}
+                  disabled={processing.isProcessing || !prompt.trim()}
+                  className="w-full py-5 rounded-3xl text-white font-black uppercase tracking-[0.2em] text-sm shadow-xl transition-all active:scale-95 disabled:opacity-30 flex items-center justify-center gap-3"
+                  style={{ backgroundColor: (processing.isProcessing || !prompt.trim()) ? '#cbd5e1' : primaryColor }}
+                >
+                  HASILKAN
+                </button>
+              </div>
+            </div>
+
+            {/* Column 2: Ratio & Settings */}
+            <div className="lg:col-span-3 flex flex-col gap-4 lg:h-full lg:overflow-hidden pt-6 lg:pt-0 lg:px-4 lg:border-r lg:border-slate-200">
+              
+              {/* Step 3: Aspect Ratio */}
+              <div className="space-y-3">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 px-1">
+                  <Maximize size={14} className="text-slate-300" /> 3. Rasio Kanvas
+                </label>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {ratios.map((r) => (
+                    <button
+                      key={r.value}
+                      onClick={() => setAspectRatio(r.value as AspectRatio)}
+                      className={`flex flex-col items-center justify-center py-3 rounded-xl border-2 transition-all ${
+                        aspectRatio === r.value 
+                          ? 'shadow-sm' 
+                          : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200'
+                      }`}
+                      style={aspectRatio === r.value ? { backgroundColor: primaryColor, borderColor: primaryColor, color: 'white' } : {}}
+                    >
+                      <span className="text-[8px] font-black">{r.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+
+
+              {/* Desktop Generate Button */}
+              <div className="hidden lg:block pt-4">
+                <button 
+                  onClick={handleGenerate}
+                  disabled={processing.isProcessing || !prompt.trim()}
+                  className="w-full py-4 rounded-3xl text-white font-black uppercase tracking-[0.2em] text-[10px] shadow-lg transition-all active:scale-95 disabled:opacity-30 flex items-center justify-center gap-3 relative overflow-hidden group"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+                  {processing.isProcessing ? <RefreshCw className="animate-spin" size={16} /> : <Sparkles size={16} />}
+                  <span>JALANKAN AI</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Column 3: Result Display */}
+            <div className="lg:col-span-6 flex flex-col gap-4 lg:h-full lg:overflow-hidden pt-8 lg:pt-0 lg:pl-4">
+              <div className="flex items-center justify-between shrink-0">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 px-1">
+                  <ImageIcon size={14} className="text-slate-300" /> Hasil Visual
+                </label>
+              </div>
+
+              <div className="lg:flex-1 flex items-center justify-center min-h-0 w-full overflow-hidden">
+                <div 
+                  className={`bg-slate-50 border-2 border-dashed rounded-[24px] flex items-center justify-center overflow-hidden relative group transition-all duration-500 shadow-inner w-full h-auto max-w-full max-h-full ${
+                    aspectRatio === '1:1' ? 'aspect-square' : aspectRatio === '16:9' ? 'aspect-[16/9]' : aspectRatio === '9:16' ? 'aspect-[9/16]' : aspectRatio === '4:3' ? 'aspect-[4/3]' : 'aspect-[3/4]'
+                  }`}
+                  style={{ 
+                    borderColor: resultImage ? 'white' : `${primaryColor}40`,
+                    backgroundColor: resultImage ? 'white' : undefined,
+                  }}
+                >
+                  <AnimatePresence mode="wait">
+                    {processing.isProcessing ? (
+                      <motion.div
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-white/80 backdrop-blur-sm"
+                      >
+                        <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-16 h-16 object-contain animate-spin" alt="Logo" />
+                        <p className="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">{processing.progress}</p>
+                      </motion.div>
+                    ) : resultImage ? (
+                      <motion.div
+                        key="result"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="w-full h-full relative"
+                      >
+                        <img src={resultImage} alt="Visual Output" className="w-full h-full object-contain bg-slate-50" />
+                      </motion.div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-12 text-center opacity-40">
+                        <div className="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center mb-4">
+                          <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-12 h-12 object-contain grayscale opacity-50" alt="Logo" />
+                        </div>
+                        <p className="text-xs font-black uppercase tracking-widest">Belum Ada Karya</p>
+                      </div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-5 gap-2 lg:gap-3 w-full mx-auto">
+                <button 
+                  onClick={() => setShowPreview(true)}
+                  disabled={!resultImage || processing.isProcessing}
+                  className="py-4 bg-white border-2 border-slate-100 rounded-2xl flex flex-col items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 shadow-sm"
+                  title="Lihat Full"
+                >
+                  <Eye size={20} />
+                </button>
+                <button 
+                  onClick={() => setIsCropping(true)}
+                  disabled={!resultImage || processing.isProcessing}
+                  className="py-4 bg-white border-2 border-slate-100 rounded-2xl flex flex-col items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 shadow-sm"
+                  title="Potong"
+                >
+                  <Scissors size={20} />
+                </button>
+                <button 
+                  onClick={handleUpscale}
+                  disabled={!resultImage || processing.isProcessing}
+                  className="py-4 bg-white border-2 border-slate-100 rounded-2xl flex flex-col items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 shadow-sm"
+                  title="Tajamkan"
+                >
+                  <Zap size={20} />
+                </button>
+                <button 
+                  onClick={() => setResultImage(initialResultImage)}
+                  disabled={!resultImage || processing.isProcessing || resultImage === initialResultImage}
+                  className="py-4 bg-white border-2 border-slate-100 rounded-2xl flex flex-col items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 shadow-sm"
+                  title="Kembalikan"
+                >
+                  <Recycle size={20} />
+                </button>
+                <button 
+                  onClick={handleDownload}
+                  disabled={!resultImage || processing.isProcessing}
+                  className="py-4 text-white rounded-2xl shadow-lg flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:bg-slate-200 disabled:hover:scale-100"
+                  style={{ backgroundColor: !resultImage || processing.isProcessing ? undefined : primaryColor }}
+                  title="Simpan"
+                >
+                  <Download size={20} />
+                </button>
+              </div>
+
+              {/* Error Popup */}
+              <AnimatePresence>
+                {processing.error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="bg-rose-50 border-2 border-rose-100 p-4 rounded-2xl text-rose-600 text-[10px] font-black text-center uppercase tracking-widest"
+                  >
+                    {processing.error}
+                  </motion.div>
                 )}
-              </motion.div>
-            )}
-          </AnimatePresence>
+              </AnimatePresence>
+            </div>
+          </div>
         </div>
+
+        {/* Modals: Crop & Preview */}
+        <AnimatePresence>
+          {isCropping && resultImage && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[110] bg-black/95 backdrop-blur-xl flex flex-col"
+            >
+              <div className="flex justify-between items-center p-6 border-b border-white/10">
+                <h2 className="text-white font-black uppercase tracking-widest text-sm">Crop Karya AI</h2>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setIsCropping(false)}
+                    className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleCropSave}
+                    className="px-6 py-2 text-black rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"
+                    style={{ backgroundColor: 'white' }}
+                  >
+                    <Check size={14} /> Simpan
+                  </button>
+                </div>
+              </div>
+              
+              <div className="flex-1 relative">
+                <Cropper
+                  image={resultImage}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={aspectRatio === '1:1' ? 1 : aspectRatio === '16:9' ? 16/9 : aspectRatio === '9:16' ? 9/16 : aspectRatio === '4:3' ? 4/3 : 3/4}
+                  onCropChange={setCrop}
+                  onCropComplete={onCropComplete}
+                  onZoomChange={setZoom}
+                />
+              </div>
+
+              <div className="p-10 bg-black/50 backdrop-blur-md flex flex-col items-center gap-4">
+                <div className="w-full max-w-xs space-y-3">
+                  <div className="flex justify-between text-[11px] font-black text-white uppercase tracking-widest">
+                    <span>Zoom Level</span>
+                    <span>{Math.round(zoom * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    value={zoom}
+                    min={1}
+                    max={3}
+                    step={0.1}
+                    onChange={(e) => setZoom(Number(e.target.value))}
+                    className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white"
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {showPreview && resultImage && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-6"
+              onClick={() => setShowPreview(false)}
+            >
+              <div className="absolute top-6 right-6 z-[210]">
+                 <button
+                   onClick={() => setShowPreview(false)}
+                   className="w-14 h-14 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center text-white transition-all shadow-2xl border border-white/20"
+                 >
+                   <X size={28} />
+                 </button>
+              </div>
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative max-w-5xl w-full h-full flex items-center justify-center"
+              >
+                <img 
+                  src={resultImage} 
+                  className="max-w-full max-h-full object-contain rounded-3xl shadow-2xl border-4 border-white/10" 
+                  alt="Full Preview" 
+                />
+                <div className="absolute bottom-10 left-1/2 -translate-x-1/2">
+                  <button
+                    onClick={handleDownload}
+                    className="bg-white text-black px-10 py-4 rounded-full font-black text-xs uppercase tracking-[0.2em] shadow-2xl hover:scale-105 transition-transform flex items-center gap-3"
+                  >
+                    <Download size={18} /> Simpan Galeri
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

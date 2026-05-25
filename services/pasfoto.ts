@@ -1,13 +1,7 @@
 
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
+import { getAI } from "./geminiService";
 import { PasFotoConfig } from "../types";
-
-/**
- * [INTEGRITY-CHECK]: 0x706173666F746F
- * STATUS: PROTECTED-V1
- */
-
-const getAI = () => new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const cleanBase64 = (base64: string) => {
   return base64.split(',')[1] || base64;
@@ -50,7 +44,25 @@ const handleApiError = (err: any) => {
 export const generatePasFoto = async (image: string, config: PasFotoConfig) => {
   try {
     const ai = getAI();
-    let prompt = `Formal pass photo. Category: ${config.category}, Gender: ${config.gender}, Background color: ${config.bgColor}, Size: ${config.size}. Professional lighting. High resolution.`;
+    
+    let outfitDesc = "";
+    if (config.category === 'SD') {
+      outfitDesc = "Indonesian elementary school (SD) student wearing a white short-sleeve button-up shirt with pointed collar, dark red/maroon necktie with a golden circular crown emblem (Indonesian national education symbol) and small text \"SD\" at the bottom of the tie, left chest pocket with an embroidered shield-shaped school badge featuring red, white, and colorful decorative elements, neatly and properly worn uniform, clean white shirt, formal school appearance";
+    } else if (config.category === 'SMP') {
+      outfitDesc = "Indonesian junior high school (SMP) student wearing a white short-sleeve button-up shirt with a blue tie, left chest pocket with an embroidered school badge, neat formal student appearance";
+    } else if (config.category === 'SMA') {
+      outfitDesc = "Indonesian senior high school (SMA) student wearing a white short-sleeve button-up shirt with a grey tie, left chest pocket with an embroidered school badge, neat formal student appearance";
+    } else if (config.category === 'JAS') {
+      outfitDesc = "wearing a formal dark professional suit jacket with a clean white button-up dress shirt underneath";
+    } else if (config.category === 'PDH_KHAKI') {
+      outfitDesc = "wearing an Indonesian civil servant khaki PDH uniform (PNS) with collar rank insignias, neat professional employee appearance";
+    } else if (config.category === 'KEMEJA_PUTIH') {
+      outfitDesc = "wearing a plain clean white button-up dress shirt with a neat collar";
+    } else {
+      outfitDesc = `wearing ${config.category} outfit`;
+    }
+
+    let prompt = `Formal pass photo. Person ${outfitDesc}. Gender: ${config.gender}, Background color: ${config.bgColor}, Size: ${config.size}. Professional studio lighting, sharp focus, high-resolution portrait.`;
     
     if (config.gender === 'PEREMPUAN') {
       if (config.useHijab) {
@@ -66,7 +78,7 @@ export const generatePasFoto = async (image: string, config: PasFotoConfig) => {
       prompt += ` Include a name tag that says "${config.nameTagText}" in ${config.nameTagMaterial} material.`;
     }
 
-    if (config.useTie) {
+    if (config.useTie && config.category !== 'SD' && config.category !== 'SMP' && config.category !== 'SMA') {
       if (config.tieStyle === 'CUSTOM' && config.customTiePrompt) {
         prompt += ` The person is wearing a custom tie: ${config.customTiePrompt}.`;
       } else {

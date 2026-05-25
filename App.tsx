@@ -29,6 +29,7 @@ import GuberHelm from './apps/helm';
 import GuberClean from './apps/bersih';
 import GuberEdit from './apps/edit';
 import GuberFood from './apps/food';
+import GuberMakanan from './apps/makanan';
 import GuberTypo from './apps/desainulang';
 import GantiBaju from './apps/gantibaju';
 import Wedding from './apps/Wedding';
@@ -43,7 +44,6 @@ import GuberMiniatur from './apps/miniatur';
 import LogoStudio from './apps/logo';
 import GuberWatermark from './apps/watermark';
 import GuberKarakter from './apps/karakter';
-import GuberGantiOrang from './apps/gantiorang';
 import HijabAI from './apps/hijabai';
 import WisataAI from './apps/wisata';
 import GuberEkstrakHijab from './apps/ekstrakhijab';
@@ -52,12 +52,21 @@ import ClaymationAI from './apps/claymation';
 import GuberBuat from './apps/buat';
 import Guber3DRender from './apps/3drender';
 import GuberEstetik from './apps/estetik';
+import GuberProdukEstetik from './apps/produkestetik';
 import GuberMockupBaju from './apps/mockupbaju';
 import GuberCitaCita from './apps/citacita';
+import GuberCitaCita2 from './apps/citacita2';
 import GuberGemukin from './apps/gemukin';
 import GuberKarpet from './apps/karpet';
+import GuberColorPicker from './apps/colorpicker';
+import GuberRambut from './apps/rambut';
+import MemoryApp from './apps/memori';
+import GuberSepatu from './apps/sepatu';
+import GuberImg2Prompt from './apps/img2prompt';
+import GabungPro from './apps/gabungpro';
 import GuberManager from './apps/manager';
-import { ShieldCheck, Globe } from 'lucide-react';
+import { ShieldCheck, Globe, Menu } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { ThemeCustomizerModal } from './src/components/ThemeCustomizerModal';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 
@@ -80,6 +89,12 @@ export const Icons = {
   ),
   Search: () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+  ),
+  Menu: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+  ),
+  Flower: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 7.5a4.5 4.5 0 1 1 4.5 4.5M12 7.5A4.5 4.5 0 1 0 7.5 12M12 7.5V9m-4.5 3a4.5 4.5 0 1 0 4.5 4.5M7.5 12H9m4.5 4.5a4.5 4.5 0 1 1-4.5-4.5m4.5 4.5V15m4.5-3a4.5 4.5 0 1 1-4.5-4.5M16.5 12H15"/></svg>
   ),
   Close: () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -215,6 +230,7 @@ const AppContent: React.FC = () => {
 
   const allAppsMetadata = [
     { id: AppId.GUBER_GANTI_BAJU, name: 'GANTI BAJU', filename: 'gantibaju.tsx', icon: <Icons.Fashion />, description: 'Tukar Pakaian Model' },
+    { id: AppId.GUBER_FOOD_ESTETIK, name: 'MAKANAN ESTETIK', filename: 'makanan.tsx', icon: <Icons.Magic />, description: 'Foto Produk Makanan Profesional' },
     { id: AppId.GUBER_FOOD, name: 'FOOD PRO', filename: 'food.tsx', icon: <Icons.Fashion />, description: 'Katalog Makanan Sultan' },
     { id: AppId.GUBER_EDIT, name: 'PRO EDITOR', filename: 'edit.tsx', icon: <Icons.Magic />, description: 'Edit Foto via Prompt' },
     { id: AppId.GUBER_TYPO, name: 'TYPO OCR', filename: 'desainulang.tsx', icon: <Icons.Magic />, description: 'Desain Teks dari Foto' },
@@ -241,9 +257,9 @@ const AppContent: React.FC = () => {
     { id: AppId.GUBER_ANIMAL, name: 'KOSTUM HEWAN', filename: 'bajuhewan.tsx', icon: <Icons.Magic />, description: 'Filter Kostum Unik' },
     { id: AppId.GUBER_FUSION, name: 'GABUNG OBJEK', filename: 'fusion.tsx', icon: <Icons.Magic />, description: 'Kreativitas Tanpa Batas' },
     { id: AppId.GUBER_GABUNG, name: 'GABUNG ORANG', filename: 'bersama.tsx', icon: <Icons.Magic />, description: 'Dua Foto Jadi Satu' },
-    { id: AppId.GUBER_EDITIN, name: 'EDIT LUCU', filename: 'editin.tsx', icon: <Icons.Magic />, description: 'Kreativitas AI Santai' },
+    { id: AppId.GUBER_EDITIN, name: 'EDIT APA AJA', filename: 'editin.tsx', icon: <Icons.Magic />, description: 'Kreativitas AI Bebas' },
     { id: AppId.GUBER_HEADWEAR, name: 'HELM UNIK', filename: 'helm.tsx', icon: <Icons.Magic />, description: 'Penutup Kepala Humor' },
-    { id: AppId.GUBER_WEDDING, name: 'WEDDING AI', filename: 'Wedding.tsx', icon: <Icons.Star filled />, description: 'Foto Pengantin Mewah' },
+    { id: AppId.GUBER_WEDDING, name: 'WEDDING AI', filename: 'Wedding.tsx', icon: <Icons.Flower />, description: 'Foto Pengantin Mewah' },
     { id: AppId.GUBER_SCENE, name: 'SCENE MASTER', filename: 'Scene.tsx', icon: <Icons.Camera />, description: 'Ubah Sudut Kamera' },
     { id: AppId.GUBER_FEED_GENERATOR, name: 'FEED GEN', filename: 'feedgenerator.tsx', icon: <Icons.Magic />, description: 'Social Media Feed' },
     { id: AppId.GUBER_BERPOLA, name: 'BERPOLA AI', filename: 'berpola.tsx', icon: <Icons.Magic />, description: 'Bersih, Pose, Latar (3-in-1)' },
@@ -255,7 +271,6 @@ const AppContent: React.FC = () => {
     { id: AppId.LOGO_STUDIO, name: 'LOGO STUDIO', filename: 'logo.tsx', icon: <Icons.Tool />, description: 'Professional AI Logo Generator' },
     { id: AppId.GUBER_WATERMARK, name: 'WATERMARK AI', filename: 'watermark.tsx', icon: <Icons.Tool />, description: 'Neural Repair Watermark' },
     { id: AppId.GUBER_KARAKTER, name: 'KARAKTER AI', filename: 'karakter.tsx', icon: <Icons.Magic />, description: 'Buah & Objek Jadi Karakter' },
-    { id: AppId.GUBER_GANTI_ORANG, name: 'SWAP WAJAH', filename: 'gantiorang.tsx', icon: <Icons.User />, description: 'Tukar Wajah pada Foto Pakaian' },
     { id: AppId.GUBER_HIJAB_AI, name: 'HIJAB AI', filename: 'hijabai.tsx', icon: <Icons.Magic />, description: 'Pasang Hijab ke Apapun' },
     { id: AppId.GUBER_EKSTRAK_HIJAB, name: 'EKSTRAK HIJAB', filename: 'ekstrakhijab.tsx', icon: <Icons.Tool />, description: 'Ekstrak Hijab ke Berbagai Media' },
     { id: AppId.GUBER_WISATA, name: 'WISATA AI', filename: 'wisata.tsx', icon: <Icons.Camera />, description: 'Keliling Dunia Secara Ajaib' },
@@ -264,10 +279,18 @@ const AppContent: React.FC = () => {
     { id: AppId.GUBER_BUAT, name: 'BUAT AI', filename: 'buat.tsx', icon: <Icons.Magic />, description: 'Real Image Generator' },
     { id: AppId.GUBER_3D_RENDER, name: '3D RENDER', filename: '3drender.tsx', icon: <Icons.Magic />, description: 'Isometric Kawaii 3D Render' },
     { id: AppId.GUBER_ESTETIK, name: 'ESTETIK AI', filename: 'estetik.tsx', icon: <Icons.Magic />, description: 'AI Photo Aesthetic Enhancer' },
+    { id: AppId.GUBER_PRODUK_ESTETIK, name: 'PRODUK ESTETIK', filename: 'produkestetik.tsx', icon: <Icons.Fashion />, description: 'Visual Iklan Produk Estetik' },
     { id: AppId.GUBER_MOCKUP_BAJU, name: 'MOCKUP BAJU', filename: 'mockupbaju.tsx', icon: <Icons.Fashion />, description: 'Boutique Hanger Mockup' },
-    { id: AppId.GUBER_CITACITA, name: 'CITA-CITA AI', filename: 'citacita.tsx', icon: <Icons.Magic />, description: 'Visualisasikan Masa Depanmu' },
+    { id: AppId.GUBER_CITACITA, name: 'CITA-CITA V1', filename: 'citacita.tsx', icon: <Icons.Magic />, description: 'Visualisasikan Masa Depanmu' },
+    { id: AppId.GUBER_CITACITA2, name: 'CITA-CITA V2', filename: 'citacita2.tsx', icon: <Icons.Magic />, description: 'Outfit & Career Swap Engine' },
     { id: AppId.GUBER_GEMUKIN, name: 'GEMUKIN AI', filename: 'gemukin.tsx', icon: <Icons.User />, description: 'Ubah Bobot Badan Instan' },
     { id: AppId.GUBER_KARPET, name: 'BAJU DI KARPET', filename: 'karpet.tsx', icon: <Icons.Fashion />, description: 'Flat Lay Photography AI' },
+    { id: AppId.GUBER_GABUNG_PRO, name: 'GABUNG PRO', filename: 'gabungpro.tsx', icon: <Icons.Magic />, description: 'Neural Image Merger Pro' },
+    { id: AppId.COLOR_PICKER, name: 'COLOR PICKER', filename: 'colorpicker.tsx', icon: <Icons.Tool />, description: 'Ekstrak Kode Warna Gambar' },
+    { id: AppId.HAIR_TRYON, name: 'GANTI RAMBUT', filename: 'rambut.tsx', icon: <Icons.Fashion />, description: 'Ubah Gaya & Warna Rambut AI' },
+    { id: AppId.GUBER_MEMORI, name: 'MEMORI AI', filename: 'memori.tsx', icon: <Icons.Magic />, description: 'Emotional Childhood transition' },
+    { id: AppId.GUBER_SEPATU, name: 'ALAS KAKI AI', filename: 'sepatu.tsx', icon: <Icons.Fashion />, description: 'Virtual Footwear Try-On' },
+    { id: AppId.IMAGE_TO_PROMPT, name: 'IMAGE TO PROMPT', filename: 'img2prompt.tsx', icon: <Icons.Magic />, description: 'Generate Prompt dari Gambar' },
   ];
 
   const APPS_WITH_DEDICATED_SERVICES = [
@@ -292,7 +315,6 @@ const AppContent: React.FC = () => {
     AppId.GUBER_SS_VIDEO,
     AppId.GUBER_FUSION,
     AppId.GUBER_GANTI_BAJU,
-    AppId.GUBER_GANTI_ORANG,
     AppId.GUBER_ERASER,
     AppId.GUBER_HEADWEAR,
     AppId.GUBER_HIJAB_AI,
@@ -320,10 +342,19 @@ const AppContent: React.FC = () => {
     AppId.GUBER_WEDDING,
     AppId.GUBER_WISATA,
     AppId.GUBER_ESTETIK,
+    AppId.GUBER_FOOD_ESTETIK,
+    AppId.GUBER_PRODUK_ESTETIK,
     AppId.GUBER_MOCKUP_BAJU,
     AppId.GUBER_CITACITA,
+    AppId.GUBER_CITACITA2,
     AppId.GUBER_GEMUKIN,
     AppId.GUBER_KARPET,
+    AppId.GUBER_GABUNG_PRO,
+    AppId.COLOR_PICKER,
+    AppId.HAIR_TRYON,
+    AppId.GUBER_MEMORI,
+    AppId.GUBER_SEPATU,
+    AppId.IMAGE_TO_PROMPT,
   ];
 
   const filteredAppsMetadata = allAppsMetadata.filter(app => 
@@ -334,16 +365,17 @@ const AppContent: React.FC = () => {
   const appSections = [
     { title: 'Favorit Saya', apps: filteredAppsMetadata.filter(a => favoriteApps.has(a.id)) },
     { title: 'Identity Tools', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_UMUR, AppId.GUBER_PAS_FOTO].includes(a.id)) },
-    { title: 'Food & Catalog', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_FOOD, AppId.GUBER_PRODUK, AppId.GUBER_MOCKUP].includes(a.id)) },
-    { title: 'Fashion & Style', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_GANTI_BAJU, AppId.GUBER_KAMAR_PAS, AppId.GUBER_WARNA, AppId.GUBER_MULTI_TRYON, AppId.GUBER_POSE, AppId.GUBER_EKSTRAK, AppId.GUBER_KIDS_MODEL, AppId.GUBER_FOTO_FASHION, AppId.GUBER_GANTI_ORANG, AppId.GUBER_HIJAB_AI, AppId.GUBER_EKSTRAK_HIJAB, AppId.GUBER_KARPET].includes(a.id)) },
-    { title: 'Studio & Edit', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_EDIT, AppId.GUBER_TYPO, AppId.GUBER_CLEAN, AppId.GUBER_ERASER, AppId.GUBER_UPSCALE, AppId.GUBER_RESTORE, AppId.GUBER_LATAR, AppId.GUBER_CROP, AppId.GUBER_SS_VIDEO, AppId.GUBER_UBAH, AppId.GUBER_LUAS, AppId.GUBER_WATERMARK].includes(a.id)) },
-    { title: 'Kreatif', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_THUMBNAIL, AppId.GUBER_ANIMAL, AppId.GUBER_FUSION, AppId.GUBER_GABUNG, AppId.GUBER_EDITIN, AppId.GUBER_HEADWEAR, AppId.GUBER_WEDDING, AppId.GUBER_SCENE, AppId.GUBER_FEED_GENERATOR, AppId.GUBER_BERPOLA, AppId.GUBER_SUARA_AI, AppId.GUBER_JADI_3D, AppId.GUBER_JIKANYATA, AppId.GUBER_MINIATUR, AppId.LOGO_STUDIO, AppId.GUBER_KARAKTER, AppId.GUBER_WISATA, AppId.GUBER_CYBORG, AppId.GUBER_CLAYMATION, AppId.GUBER_BUAT, AppId.GUBER_3D_RENDER, AppId.GUBER_ESTETIK, AppId.GUBER_MOCKUP_BAJU, AppId.GUBER_CITACITA, AppId.GUBER_GEMUKIN].includes(a.id)) },
+    { title: 'Food & Catalog', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_FOOD, AppId.GUBER_PRODUK, AppId.GUBER_MOCKUP, AppId.GUBER_PRODUK_ESTETIK, AppId.GUBER_FOOD_ESTETIK].includes(a.id)) },
+    { title: 'Fashion & Style', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_GANTI_BAJU, AppId.GUBER_KAMAR_PAS, AppId.GUBER_WARNA, AppId.GUBER_MULTI_TRYON, AppId.GUBER_POSE, AppId.GUBER_EKSTRAK, AppId.GUBER_KIDS_MODEL, AppId.GUBER_FOTO_FASHION, AppId.GUBER_HIJAB_AI, AppId.GUBER_EKSTRAK_HIJAB, AppId.GUBER_KARPET, AppId.HAIR_TRYON, AppId.GUBER_SEPATU].includes(a.id)) },
+    { title: 'Studio & Edit', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_EDIT, AppId.GUBER_TYPO, AppId.GUBER_CLEAN, AppId.GUBER_ERASER, AppId.GUBER_UPSCALE, AppId.GUBER_RESTORE, AppId.GUBER_LATAR, AppId.GUBER_CROP, AppId.GUBER_SS_VIDEO, AppId.GUBER_UBAH, AppId.GUBER_LUAS, AppId.GUBER_WATERMARK, AppId.COLOR_PICKER, AppId.IMAGE_TO_PROMPT].includes(a.id)) },
+    { title: 'Kreatif', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_THUMBNAIL, AppId.GUBER_ANIMAL, AppId.GUBER_FUSION, AppId.GUBER_GABUNG, AppId.GUBER_GABUNG_PRO, AppId.GUBER_EDITIN, AppId.GUBER_HEADWEAR, AppId.GUBER_WEDDING, AppId.GUBER_SCENE, AppId.GUBER_FEED_GENERATOR, AppId.GUBER_BERPOLA, AppId.GUBER_SUARA_AI, AppId.GUBER_JADI_3D, AppId.GUBER_JIKANYATA, AppId.GUBER_MINIATUR, AppId.LOGO_STUDIO, AppId.GUBER_KARAKTER, AppId.GUBER_WISATA, AppId.GUBER_CYBORG, AppId.GUBER_CLAYMATION, AppId.GUBER_BUAT, AppId.GUBER_3D_RENDER, AppId.GUBER_ESTETIK, AppId.GUBER_MOCKUP_BAJU, AppId.GUBER_CITACITA, AppId.GUBER_CITACITA2, AppId.GUBER_GEMUKIN, AppId.GUBER_MEMORI, AppId.GUBER_SEPATU].includes(a.id)) },
   ];
 
   const renderApps = () => {
     const appsToRender = [
       { id: AppId.GUBER_HOME, component: <GuberHome onStart={() => setIsSidebarOpen(true)} apps={allAppsMetadata} onSelectApp={handleSelect} /> },
       { id: AppId.GUBER_GANTI_BAJU, component: <GantiBaju /> },
+      { id: AppId.GUBER_FOOD_ESTETIK, component: <GuberMakanan /> },
       { id: AppId.GUBER_FOOD, component: <GuberFood /> },
       { id: AppId.GUBER_EDIT, component: <GuberEdit /> },
       { id: AppId.GUBER_TYPO, component: <GuberTypo /> },
@@ -384,7 +416,6 @@ const AppContent: React.FC = () => {
       { id: AppId.LOGO_STUDIO, component: <LogoStudio /> },
       { id: AppId.GUBER_WATERMARK, component: <GuberWatermark /> },
       { id: AppId.GUBER_KARAKTER, component: <GuberKarakter /> },
-      { id: AppId.GUBER_GANTI_ORANG, component: <GuberGantiOrang /> },
       { id: AppId.GUBER_HIJAB_AI, component: <HijabAI /> },
       { id: AppId.GUBER_EKSTRAK_HIJAB, component: <GuberEkstrakHijab /> },
       { id: AppId.GUBER_WISATA, component: <WisataAI /> },
@@ -393,10 +424,18 @@ const AppContent: React.FC = () => {
       { id: AppId.GUBER_BUAT, component: <GuberBuat /> },
       { id: AppId.GUBER_3D_RENDER, component: <Guber3DRender /> },
       { id: AppId.GUBER_ESTETIK, component: <GuberEstetik /> },
+      { id: AppId.GUBER_PRODUK_ESTETIK, component: <GuberProdukEstetik /> },
       { id: AppId.GUBER_MOCKUP_BAJU, component: <GuberMockupBaju /> },
       { id: AppId.GUBER_CITACITA, component: <GuberCitaCita /> },
+      { id: AppId.GUBER_CITACITA2, component: <GuberCitaCita2 /> },
       { id: AppId.GUBER_GEMUKIN, component: <GuberGemukin /> },
       { id: AppId.GUBER_KARPET, component: <GuberKarpet /> },
+      { id: AppId.GUBER_GABUNG_PRO, component: <GabungPro /> },
+      { id: AppId.COLOR_PICKER, component: <GuberColorPicker /> },
+      { id: AppId.HAIR_TRYON, component: <GuberRambut /> },
+      { id: AppId.GUBER_MEMORI, component: <MemoryApp /> },
+      { id: AppId.GUBER_SEPATU, component: <GuberSepatu /> },
+      { id: AppId.IMAGE_TO_PROMPT, component: <GuberImg2Prompt /> },
       { id: AppId.GUBER_MANAGER, component: <GuberManager /> },
     ];
 
@@ -427,16 +466,31 @@ const AppContent: React.FC = () => {
       )}
 
       {!isSidebarOpen && (
-        <button 
+        <motion.button 
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          whileHover={{ x: 0 }}
           onClick={() => setIsSidebarOpen(true)} 
-          className="fixed left-[-20px] top-1/2 -translate-y-1/2 z-[100] bg-[var(--color-primary)]/30 backdrop-blur-sm w-[50px] h-[120px] rounded-r-2xl shadow-lg border-y border-r border-[var(--color-primary)]/20 flex items-center justify-center hover:left-0 transition-all overflow-hidden group"
+          className="fixed left-[-20px] top-1/2 -translate-y-1/2 z-[100] backdrop-blur-md w-[50px] h-[140px] rounded-r-2xl border-y border-r border-white/20 flex items-center justify-center transition-all overflow-hidden group"
+          style={{ 
+            backgroundColor: `${primaryColor}B3`, // 70% opacity
+            boxShadow: `0 15px 40px -5px ${primaryColor}99` // Stronger shadow
+          }}
         >
-           <img 
-             src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" 
-             className="w-8 h-8 object-contain animate-[spin_15s_linear_infinite] ml-4 group-hover:scale-110 transition-transform opacity-100" 
-             alt="Logo" 
-           />
-        </button>
+           <div className="flex flex-col items-center gap-3 ml-4">
+             {/* Top vertical line */}
+             <div className="w-[1px] h-10 bg-gradient-to-t from-white/60 to-transparent rounded-full" />
+             
+             <img 
+               src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" 
+               className="w-8 h-8 object-contain animate-[spin_15s_linear_infinite] group-hover:scale-110 transition-transform opacity-100" 
+               alt="Logo" 
+             />
+
+             {/* Bottom vertical line */}
+             <div className="w-[1px] h-10 bg-gradient-to-b from-white/60 to-transparent rounded-full" />
+           </div>
+        </motion.button>
       )}
       
       <aside 
@@ -474,15 +528,17 @@ const AppContent: React.FC = () => {
               </div>
               <span className="text-[9px] font-black text-[var(--color-secondary)] uppercase mt-1 tracking-[0.2em] leading-none">PROFESIONAL</span>
             </div>
-            <a 
-              href="https://accounts.google.com/SignOutOptions?continue=https://aistudio.google.com/u/5/apps/dfb24f1e-14fe-470b-a038-9faf8ad3808b?showAssistant=true" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-[var(--color-secondary)] transition-all border border-white/10 group"
-              title="Ganti Akun"
-            >
-              <Icons.User />
-            </a>
+            {searchQuery === '1111' && (
+              <a 
+                href="https://accounts.google.com/SignOutOptions?continue=https://aistudio.google.com/u/5/apps/dfb24f1e-14fe-470b-a038-9faf8ad3808b?showAssistant=true" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-[var(--color-secondary)] transition-all border border-white/10 group"
+                title="Ganti Akun"
+              >
+                <Icons.User />
+              </a>
+            )}
           </div>
 
           <div className="relative group">
@@ -576,8 +632,8 @@ const AppContent: React.FC = () => {
 
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        <div className={`flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 lg:p-10`}> 
-          <div className="max-w-7xl mx-auto w-full">{renderApps()}</div>
+        <div className={`flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 lg:p-4`}> 
+          <div className="max-w-full mx-auto w-full">{renderApps()}</div>
         </div>
       </main>
     </div>

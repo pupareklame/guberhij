@@ -1,13 +1,7 @@
 
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
+import { getAI } from "./geminiService";
 import { MockUpConfig } from "../types";
-
-/**
- * [INTEGRITY-CHECK]: 0x6D6F636B7570
- * STATUS: PROTECTED-V1
- */
-
-const getAI = () => new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const cleanBase64 = (base64: string) => {
   return base64.split(',')[1] || base64;

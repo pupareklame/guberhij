@@ -1,7 +1,6 @@
 
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-
-const getAI = () => new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+import { getAI, runWithRetry } from "./geminiService";
 
 const cleanBase64 = (base64: string) => {
   return base64.split(',')[1] || base64;
@@ -27,38 +26,50 @@ const extractImageFromResponse = (response: GenerateContentResponse) => {
   return null;
 };
 
-export const changeBackground = async (image: string, prompt: string, aspectRatio: string = "9:16") => {
-  const ai = getAI();
-  const parts: any[] = [{ inlineData: { data: cleanBase64(image), mimeType: 'image/png' } }];
-  
-  parts.push({
-    text: `[TASK]: PROFESSIONAL BACKGROUND REMOVAL & REPLACEMENT.
-    [OBJECTIVE]: Remove the existing background from the source image, clean the subject (usually a person), and place them into a new environment.
-    [INSTRUCTION]: ${prompt}.
-    [RULES]: 
-    1. BACKGROUND REMOVAL: Completely remove and clean the original background from the source image.
-    2. IDENTITY LOCK: The person or subject in the source image must remain 100% IDENTICAL in terms of features, face, and clothing.
-    3. MAINTAIN POSE: Do NOT change the subject's pose or body position. Keep it exactly as in the source image.
-    4. SEAMLESS BLENDING: Apply "Global Illumination" matching. The lighting on the subject must be adjusted to match the new environment perfectly.
-    5. CONTACT SHADOWS: Generate realistic contact shadows and ambient occlusion where the subject meets the ground or surfaces in the new environment.
-    6. COLOR GRADING: Apply professional cinematic color grading to the entire image to ensure the subject and new background share a unified color palette.
-    7. DEPTH OF FIELD: Professional cinematic blur (bokeh) for the new background, with a natural transition from the subject.
-    8. OUTPUT: Professional 8K advertising quality, photorealistic, ultra-detailed textures.
-    9. NO DISTORTION: Do not change the subject's shape, proportions, or facial features.
-    10. ASPECT RATIO: Use ${aspectRatio}.`
-  });
+export const changeBackground = async (image: string, prompt: string, aspectRatio: string = "9:16", backgroundImage?: string) => {
+  try {
+    return await runWithRetry(async (ai) => {
+      const parts: any[] = [{ inlineData: { data: cleanBase64(image), mimeType: 'image/png' } }];
+      
+      if (backgroundImage) {
+        parts.push({ inlineData: { data: cleanBase64(backgroundImage), mimeType: 'image/png' } });
+      }
 
-  const model = ai.models.generateContent({
-    model: "gemini-2.5-flash-image",
-    contents: [{ parts }],
-    config: {
-      imageConfig: { aspectRatio: aspectRatio as any },
-      seed: Math.floor(Math.random() * 1000000)
+      parts.push({
+        text: `[TASK]: STEP-BY-STEP SUBJECT EXTRACTION & FULL AREA REPLACEMENT.
+        [WORKFLOW]:
+        1. SUBJECT DETECTION: Identify the main person/character in the first image.
+        2. ISOLATION: Extract ONLY the person.
+        3. ${backgroundImage ? 'COMPOSITION: Place the extracted person from the first image onto the background seen in the second image.' : 'FULL REPLACEMENT: Apply the new environment preset to the area surrounding the person.'}
+        [OBJECTIVE]: ${backgroundImage ? 'Seamlessly blend the person onto the provided custom background.' : '100% of the area outside the person must be replaced by the new scene.'}
+        [INSTRUCTION]: ${prompt}.
+        [RULES]: 
+        1. NO LEAKS: Absolutely zero remnants of the original background.
+        2. SUBJECT INTEGRITY: The person must remain 100% IDENTICAL.
+        3. SEAMLESS BLENDING: Integrate the person naturally with realistic lighting and shadows.
+        4. QUALITY: Professional 8K advertising quality.
+        5. ASPECT RATIO: Use ${aspectRatio}.`
+      });
+
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash-image",
+        contents: [{ parts }],
+        config: {
+          imageConfig: { aspectRatio: aspectRatio as any },
+          seed: Math.floor(Math.random() * 1000000)
+        }
+      });
+
+      const result = extractImageFromResponse(response);
+      if (!result) throw new Error("Gagal menghasilkan gambar latar belakang baru.");
+      return result;
+    });
+  } catch (error: any) {
+    console.error("Change Background Error:", error);
+    const msg = error.message || "";
+    if (msg.includes("403") || msg.includes("permission") || msg.includes("PERMISSION_DENIED")) {
+       throw new Error("Izin Gagal (403): Silakan gunakan API Key pribadi di Settings atau coba lagi nanti.");
     }
-  });
-
-  const response = await model;
-  const result = extractImageFromResponse(response);
-  if (!result) throw new Error("Gagal menghasilkan gambar latar belakang baru.");
-  return result;
+    throw error;
+  }
 };

@@ -5,8 +5,7 @@
  */
 
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-
-const getAI = () => new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+import { getAI } from "./geminiService";
 
 const cleanBase64 = (base64: string) => {
   return base64.split(',')[1] || base64;

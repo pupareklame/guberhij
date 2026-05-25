@@ -6,7 +6,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Scissors, Download, RefreshCw, Sparkles, Image as ImageIcon, Zap, X, Check, Shirt, Layers } from 'lucide-react';
+import { Scissors, Download, RefreshCw, Sparkles, Image as ImageIcon, Zap, X, Check, Shirt, Layers, RotateCcw } from 'lucide-react';
 import Cropper from 'react-easy-crop';
 import { ProcessingState } from '../types';
 import { extractClothing, upscaleImage } from '../services/ekstrakbaju';
@@ -15,15 +15,47 @@ import { useTheme } from '../src/contexts/ThemeContext';
 
 const GuberEkstrak: React.FC = () => {
   const { primaryColor } = useTheme();
-  const [modelImage, setModelImage] = useState<string | null>(null);
-  const [topResult, setTopResult] = useState<string | null>(null);
-  const [bottomResult, setBottomResult] = useState<string | null>(null);
-  const [fullResult, setFullResult] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<'FRONT' | 'BACK'>('FRONT');
+  const [modelImageFront, setModelImageFront] = useState<string | null>(null);
+  const [modelImageBack, setModelImageBack] = useState<string | null>(null);
+  
+  const [topResultFront, setTopResultFront] = useState<string | null>(null);
+  const [bottomResultFront, setBottomResultFront] = useState<string | null>(null);
+  const [fullResultFront, setFullResultFront] = useState<string | null>(null);
+  
+  const [topResultBack, setTopResultBack] = useState<string | null>(null);
+  const [bottomResultBack, setBottomResultBack] = useState<string | null>(null);
+  const [fullResultBack, setFullResultBack] = useState<string | null>(null);
+
   const [aspectRatio, setAspectRatio] = useState('1:1');
   
   const [processingTop, setProcessingTop] = useState<ProcessingState>({ isProcessing: false, error: null, progress: '', });
   const [processingBottom, setProcessingBottom] = useState<ProcessingState>({ isProcessing: false, error: null, progress: '', });
   const [processingFull, setProcessingFull] = useState<ProcessingState>({ isProcessing: false, error: null, progress: '', });
+
+  // Helper getters/setters based on view
+  const currentModelImage = activeView === 'FRONT' ? modelImageFront : modelImageBack;
+  const setModelImage = (img: string | null) => activeView === 'FRONT' ? setModelImageFront(img) : setModelImageBack(img);
+
+  const getResult = (type: 'TOP' | 'BOTTOM' | 'FULL') => {
+    if (activeView === 'FRONT') {
+      return type === 'TOP' ? topResultFront : type === 'BOTTOM' ? bottomResultFront : fullResultFront;
+    } else {
+      return type === 'TOP' ? topResultBack : type === 'BOTTOM' ? bottomResultBack : fullResultBack;
+    }
+  };
+
+  const setResultState = (type: 'TOP' | 'BOTTOM' | 'FULL', val: string | null) => {
+    if (activeView === 'FRONT') {
+      if (type === 'TOP') setTopResultFront(val);
+      else if (type === 'BOTTOM') setBottomResultFront(val);
+      else setFullResultFront(val);
+    } else {
+      if (type === 'TOP') setTopResultBack(val);
+      else if (type === 'BOTTOM') setBottomResultBack(val);
+      else setFullResultBack(val);
+    }
+  };
 
   // Crop States
   const [isCropping, setIsCropping] = useState(false);
@@ -41,10 +73,9 @@ const GuberEkstrak: React.FC = () => {
   ];
 
   const handleExtract = async (type: 'TOP' | 'BOTTOM' | 'FULL') => {
-    if (!modelImage) return;
+    if (!currentModelImage) return;
     
     const setProc = type === 'TOP' ? setProcessingTop : type === 'BOTTOM' ? setProcessingBottom : setProcessingFull;
-    const setResult = type === 'TOP' ? setTopResult : type === 'BOTTOM' ? setBottomResult : setFullResult;
     
     setProc({ 
       isProcessing: true, 
@@ -53,8 +84,8 @@ const GuberEkstrak: React.FC = () => {
     });
     
     try {
-      const result = await extractClothing(modelImage, type, aspectRatio);
-      setResult(result);
+      const result = await extractClothing(currentModelImage, type, aspectRatio, activeView);
+      setResultState(type, result);
       setProc({ isProcessing: false, error: null, progress: '' });
     } catch (err: any) { 
       setProc({ isProcessing: false, error: err.message || "Gagal ekstraksi.", progress: '' }); 
@@ -82,8 +113,7 @@ const GuberEkstrak: React.FC = () => {
     });
 
   const handleCropSave = async () => {
-    const resultImage = cropTarget === 'TOP' ? topResult : cropTarget === 'BOTTOM' ? bottomResult : fullResult;
-    const setResult = cropTarget === 'TOP' ? setTopResult : cropTarget === 'BOTTOM' ? setBottomResult : setFullResult;
+    const resultImage = getResult(cropTarget!);
     
     if (!resultImage || !croppedAreaPixels) return;
     try {
@@ -111,7 +141,7 @@ const GuberEkstrak: React.FC = () => {
         croppedAreaPixels.height
       );
 
-      setResult(canvas.toDataURL('image/png'));
+      setResultState(cropTarget!, canvas.toDataURL('image/png'));
       setIsCropping(false);
     } catch (e) {
       console.error(e);
@@ -120,8 +150,7 @@ const GuberEkstrak: React.FC = () => {
   };
 
   const handleSharpen = async (type: 'TOP' | 'BOTTOM' | 'FULL') => {
-    const resultImage = type === 'TOP' ? topResult : type === 'BOTTOM' ? bottomResult : fullResult;
-    const setResult = type === 'TOP' ? setTopResult : type === 'BOTTOM' ? setBottomResult : setFullResult;
+    const resultImage = getResult(type);
     const setProc = type === 'TOP' ? setProcessingTop : type === 'BOTTOM' ? setProcessingBottom : setProcessingFull;
 
     if (!resultImage) return;
@@ -129,7 +158,7 @@ const GuberEkstrak: React.FC = () => {
     
     try {
       const sharpenedImage = await upscaleImage(resultImage, aspectRatio);
-      setResult(sharpenedImage);
+      setResultState(type, sharpenedImage);
       setProc({ isProcessing: false, error: null, progress: '' });
     } catch (e: any) {
       console.error(e);
@@ -161,18 +190,43 @@ const GuberEkstrak: React.FC = () => {
         </div>
 
         <div className="p-8 space-y-6">
+          {/* View Selection Tabs */}
+          <div className="flex p-1 bg-slate-100 rounded-2xl">
+            <button
+              onClick={() => setActiveView('FRONT')}
+              className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 flex items-center justify-center gap-2 ${
+                activeView === 'FRONT' ? 'bg-white shadow-sm' : 'text-slate-400 hover:text-slate-600'
+              }`}
+              style={{ color: activeView === 'FRONT' ? primaryColor : undefined }}
+            >
+              <ImageIcon size={14} />
+              Tampak Depan
+            </button>
+            <button
+              onClick={() => setActiveView('BACK')}
+              className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 flex items-center justify-center gap-2 ${
+                activeView === 'BACK' ? 'bg-white shadow-sm' : 'text-slate-400 hover:text-slate-600'
+              }`}
+              style={{ color: activeView === 'BACK' ? primaryColor : undefined }}
+            >
+              <RotateCcw size={14} className="scale-x-[-1]" />
+              Tampak Belakang
+            </button>
+          </div>
+
           {/* Model Upload */}
           <div className="space-y-3">
             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <ImageIcon size={14} className="text-slate-300" /> 1. Foto Model Sumber
+              <ImageIcon size={14} className="text-slate-300" /> 1. Foto Model ({activeView === 'FRONT' ? 'Depan' : 'Belakang'})
             </label>
             <ImageUploader 
-              label="Unggah Model" 
-              image={modelImage} 
+              label={`Unggah Model ${activeView === 'FRONT' ? 'Depan' : 'Belakang'}`} 
+              image={currentModelImage} 
               onImageSelect={(img) => {
                 setModelImage(img);
-                setTopResult(null);
-                setBottomResult(null);
+                setResultState('TOP', null);
+                setResultState('BOTTOM', null);
+                setResultState('FULL', null);
               }} 
               aspectRatio="9-16" 
               labelInside
@@ -218,9 +272,9 @@ const GuberEkstrak: React.FC = () => {
           <div className="grid grid-cols-3 gap-3 pt-4">
             <button
               onClick={() => handleExtract('TOP')}
-              disabled={processingTop.isProcessing || !modelImage}
+              disabled={processingTop.isProcessing || !currentModelImage}
               className="disabled:bg-slate-300 text-white py-5 rounded-[28px] font-black uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center group relative overflow-hidden"
-              style={{ backgroundColor: processingTop.isProcessing || !modelImage ? undefined : primaryColor }}
+              style={{ backgroundColor: processingTop.isProcessing || !currentModelImage ? undefined : primaryColor }}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
               {processingTop.isProcessing ? (
@@ -231,9 +285,9 @@ const GuberEkstrak: React.FC = () => {
             </button>
             <button
               onClick={() => handleExtract('FULL')}
-              disabled={processingFull.isProcessing || !modelImage}
+              disabled={processingFull.isProcessing || !currentModelImage}
               className="disabled:bg-slate-300 text-white py-5 rounded-[28px] font-black uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center group relative overflow-hidden"
-              style={{ backgroundColor: processingFull.isProcessing || !modelImage ? undefined : '#5A5A40' }}
+              style={{ backgroundColor: processingFull.isProcessing || !currentModelImage ? undefined : '#5A5A40' }}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
               {processingFull.isProcessing ? (
@@ -244,9 +298,9 @@ const GuberEkstrak: React.FC = () => {
             </button>
             <button
               onClick={() => handleExtract('BOTTOM')}
-              disabled={processingBottom.isProcessing || !modelImage}
+              disabled={processingBottom.isProcessing || !currentModelImage}
               className="disabled:bg-slate-300 text-white py-5 rounded-[28px] font-black uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center group relative overflow-hidden"
-              style={{ backgroundColor: processingBottom.isProcessing || !modelImage ? undefined : 'black' }}
+              style={{ backgroundColor: processingBottom.isProcessing || !currentModelImage ? undefined : 'black' }}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
               {processingBottom.isProcessing ? (
@@ -262,18 +316,18 @@ const GuberEkstrak: React.FC = () => {
             {/* Full Result (Gamis/Jubah) */}
             <div className="space-y-4">
               <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-center gap-2">
-                Hasil Full (Gamis / Jubah)
+                Hasil Full {activeView === 'BACK' ? 'Belakang' : ''} (Gamis / Jubah)
               </label>
               <div className="aspect-[3/4] w-full max-w-[320px] mx-auto bg-white border-2 border-dashed rounded-[32px] flex items-center justify-center overflow-hidden relative group transition-all duration-500"
-                style={{ borderColor: fullResult ? 'white' : `#5A5A4040` }}
+                style={{ borderColor: getResult('FULL') ? 'white' : `#5A5A4040` }}
               >
                 <AnimatePresence mode="wait">
                   {processingFull.isProcessing ? (
                     <motion.div key="loading-full" className="absolute inset-0 flex items-center justify-center z-30">
                       <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-16 h-16 object-contain animate-spin" alt="Logo" />
                     </motion.div>
-                  ) : fullResult ? (
-                    <motion.img key="result-full" src={fullResult} className="w-full h-full object-contain p-4" alt="Full Result" />
+                  ) : getResult('FULL') ? (
+                    <motion.img key="result-full" src={getResult('FULL')!} className="w-full h-full object-contain p-4" alt="Full Result" />
                   ) : (
                     <div className="opacity-20 flex flex-col items-center">
                       <Shirt size={60} className="text-slate-400 mb-2" />
@@ -283,9 +337,9 @@ const GuberEkstrak: React.FC = () => {
                 </AnimatePresence>
               </div>
               <div className="grid grid-cols-3 gap-2 max-w-[320px] mx-auto">
-                <button onClick={() => { setCropTarget('FULL'); setIsCropping(true); }} disabled={!fullResult} className="p-4 bg-slate-50 rounded-2xl text-slate-400 hover:text-teal-600 transition-colors disabled:opacity-30 flex items-center justify-center"><Scissors size={20} /></button>
-                <button onClick={() => handleSharpen('FULL')} disabled={!fullResult} className="p-4 bg-slate-50 rounded-2xl text-slate-400 hover:text-teal-600 transition-colors disabled:opacity-30 flex items-center justify-center"><Zap size={20} /></button>
-                <button onClick={() => handleDownload(fullResult!, 'full')} disabled={!fullResult} className="p-4 bg-slate-50 rounded-2xl text-slate-400 hover:text-teal-600 transition-colors disabled:opacity-30 flex items-center justify-center"><Download size={20} /></button>
+                <button onClick={() => { setCropTarget('FULL'); setIsCropping(true); }} disabled={!getResult('FULL')} className="p-4 bg-slate-50 rounded-2xl text-slate-400 hover:text-teal-600 transition-colors disabled:opacity-30 flex items-center justify-center"><Scissors size={20} /></button>
+                <button onClick={() => handleSharpen('FULL')} disabled={!getResult('FULL')} className="p-4 bg-slate-50 rounded-2xl text-slate-400 hover:text-teal-600 transition-colors disabled:opacity-30 flex items-center justify-center"><Zap size={20} /></button>
+                <button onClick={() => handleDownload(getResult('FULL')!, `full-${activeView.toLowerCase()}`)} disabled={!getResult('FULL')} className="p-4 bg-slate-50 rounded-2xl text-slate-400 hover:text-teal-600 transition-colors disabled:opacity-30 flex items-center justify-center"><Download size={20} /></button>
               </div>
             </div>
 
@@ -293,18 +347,18 @@ const GuberEkstrak: React.FC = () => {
               {/* Top Result */}
             <div className="space-y-4">
               <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-center gap-2">
-                Hasil Atasan
+                Hasil Atasan {activeView === 'BACK' ? 'Belakang' : ''}
               </label>
               <div className="aspect-square w-full bg-white border-2 border-dashed rounded-[32px] flex items-center justify-center overflow-hidden relative group transition-all duration-500"
-                style={{ borderColor: topResult ? 'white' : `${primaryColor}40` }}
+                style={{ borderColor: getResult('TOP') ? 'white' : `${primaryColor}40` }}
               >
                 <AnimatePresence mode="wait">
                   {processingTop.isProcessing ? (
                     <motion.div key="loading-top" className="absolute inset-0 flex items-center justify-center z-30">
                       <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-12 h-12 object-contain animate-spin" alt="Logo" />
                     </motion.div>
-                  ) : topResult ? (
-                    <motion.img key="result-top" src={topResult} className="w-full h-full object-contain p-4" alt="Top Result" />
+                  ) : getResult('TOP') ? (
+                    <motion.img key="result-top" src={getResult('TOP')!} className="w-full h-full object-contain p-4" alt="Top Result" />
                   ) : (
                     <div className="opacity-20 flex flex-col items-center">
                       <Shirt size={40} className="text-slate-400 mb-2" />
@@ -314,27 +368,27 @@ const GuberEkstrak: React.FC = () => {
                 </AnimatePresence>
               </div>
               <div className="grid grid-cols-3 gap-2">
-                <button onClick={() => { setCropTarget('TOP'); setIsCropping(true); }} disabled={!topResult} className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-teal-600 transition-colors disabled:opacity-30 flex items-center justify-center"><Scissors size={16} /></button>
-                <button onClick={() => handleSharpen('TOP')} disabled={!topResult} className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-teal-600 transition-colors disabled:opacity-30 flex items-center justify-center"><Zap size={16} /></button>
-                <button onClick={() => handleDownload(topResult!, 'atasan')} disabled={!topResult} className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-teal-600 transition-colors disabled:opacity-30 flex items-center justify-center"><Download size={16} /></button>
+                <button onClick={() => { setCropTarget('TOP'); setIsCropping(true); }} disabled={!getResult('TOP')} className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-teal-600 transition-colors disabled:opacity-30 flex items-center justify-center"><Scissors size={16} /></button>
+                <button onClick={() => handleSharpen('TOP')} disabled={!getResult('TOP')} className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-teal-600 transition-colors disabled:opacity-30 flex items-center justify-center"><Zap size={16} /></button>
+                <button onClick={() => handleDownload(getResult('TOP')!, `atasan-${activeView.toLowerCase()}`)} disabled={!getResult('TOP')} className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-teal-600 transition-colors disabled:opacity-30 flex items-center justify-center"><Download size={16} /></button>
               </div>
             </div>
 
             {/* Bottom Result */}
             <div className="space-y-4">
               <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-center gap-2">
-                Hasil Bawahan
+                Hasil Bawahan {activeView === 'BACK' ? 'Belakang' : ''}
               </label>
               <div className="aspect-square w-full bg-white border-2 border-dashed rounded-[32px] flex items-center justify-center overflow-hidden relative group transition-all duration-500"
-                style={{ borderColor: bottomResult ? 'white' : `black` }}
+                style={{ borderColor: getResult('BOTTOM') ? 'white' : `black` }}
               >
                 <AnimatePresence mode="wait">
                   {processingBottom.isProcessing ? (
                     <motion.div key="loading-bottom" className="absolute inset-0 flex items-center justify-center z-30">
                       <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-12 h-12 object-contain animate-spin" alt="Logo" />
                     </motion.div>
-                  ) : bottomResult ? (
-                    <motion.img key="result-bottom" src={bottomResult} className="w-full h-full object-contain p-4" alt="Bottom Result" />
+                  ) : getResult('BOTTOM') ? (
+                    <motion.img key="result-bottom" src={getResult('BOTTOM')!} className="w-full h-full object-contain p-4" alt="Bottom Result" />
                   ) : (
                     <div className="opacity-20 flex flex-col items-center">
                       <Layers size={40} className="text-slate-400 mb-2" />
@@ -344,9 +398,9 @@ const GuberEkstrak: React.FC = () => {
                 </AnimatePresence>
               </div>
               <div className="grid grid-cols-3 gap-2">
-                <button onClick={() => { setCropTarget('BOTTOM'); setIsCropping(true); }} disabled={!bottomResult} className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-teal-600 transition-colors disabled:opacity-30 flex items-center justify-center"><Scissors size={16} /></button>
-                <button onClick={() => handleSharpen('BOTTOM')} disabled={!bottomResult} className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-teal-600 transition-colors disabled:opacity-30 flex items-center justify-center"><Zap size={16} /></button>
-                <button onClick={() => handleDownload(bottomResult!, 'bawahan')} disabled={!bottomResult} className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-teal-600 transition-colors disabled:opacity-30 flex items-center justify-center"><Download size={16} /></button>
+                <button onClick={() => { setCropTarget('BOTTOM'); setIsCropping(true); }} disabled={!getResult('BOTTOM')} className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-teal-600 transition-colors disabled:opacity-30 flex items-center justify-center"><Scissors size={16} /></button>
+                <button onClick={() => handleSharpen('BOTTOM')} disabled={!getResult('BOTTOM')} className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-teal-600 transition-colors disabled:opacity-30 flex items-center justify-center"><Zap size={16} /></button>
+                <button onClick={() => handleDownload(getResult('BOTTOM')!, `bawahan-${activeView.toLowerCase()}`)} disabled={!getResult('BOTTOM')} className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-teal-600 transition-colors disabled:opacity-30 flex items-center justify-center"><Download size={16} /></button>
               </div>
             </div>
           </div>
@@ -370,7 +424,7 @@ const GuberEkstrak: React.FC = () => {
 
       {/* Crop Modal */}
       <AnimatePresence>
-        {isCropping && (cropTarget === 'TOP' ? topResult : cropTarget === 'BOTTOM' ? bottomResult : fullResult) && (
+        {isCropping && getResult(cropTarget!) && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -398,7 +452,7 @@ const GuberEkstrak: React.FC = () => {
             
             <div className="flex-1 relative">
               <Cropper
-                image={cropTarget === 'TOP' ? topResult! : cropTarget === 'BOTTOM' ? bottomResult! : fullResult!}
+                image={getResult(cropTarget!)!}
                 crop={crop}
                 zoom={zoom}
                 aspect={aspectRatio === '1:1' ? 1 : aspectRatio === '3:4' ? 3/4 : aspectRatio === '4:3' ? 4/3 : aspectRatio === '9:16' ? 9/16 : 16/9}

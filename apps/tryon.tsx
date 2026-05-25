@@ -198,11 +198,11 @@ const GuberMultiTryOn: React.FC = () => {
   const [ratioW, ratioH] = aspectRatio.split(':').map(Number);
 
   return (
-    <div className="h-full bg-slate-50/50 overflow-y-auto custom-scrollbar">
-      <div className="max-w-2xl lg:max-w-7xl mx-auto min-h-full bg-white flex flex-col border-x border-slate-100 shadow-sm">
-        {/* Header */}
+    <div className="lg:h-screen bg-slate-50/50 lg:overflow-hidden min-h-screen custom-scrollbar overflow-x-hidden">
+      <div className="max-w-2xl lg:max-w-full mx-auto lg:h-full bg-white flex flex-col border-x border-slate-100 shadow-sm">
+        {/* Header - Hidden on Desktop */}
         <div 
-          className="p-4 border-b border-white/10 rounded-b-[40px] shadow-xl"
+          className="p-4 border-b border-white/10 rounded-b-[40px] shadow-xl z-20 lg:hidden"
           style={{ 
             background: `linear-gradient(135deg, ${primaryColor}, color-mix(in srgb, ${primaryColor}, black 20%))`,
           }}
@@ -213,304 +213,298 @@ const GuberMultiTryOn: React.FC = () => {
                 <Shirt size={16} />
               </div>
               <div className="flex flex-col">
-                <h1 className="text-base font-black text-white tracking-tight leading-none mb-0.5 uppercase">MULTI TRY-ON STUDIO</h1>
-                <p className="text-[7px] font-bold uppercase tracking-[0.3em] leading-none text-white/60">Smart Fitting Engine</p>
+                <h1 className="text-base font-black text-white tracking-tight leading-none mb-0.5 uppercase">TRY-ON AI</h1>
+                <p className="text-[7px] font-bold uppercase tracking-[0.3em] leading-none text-white/60">Neural Fitting Engine</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="p-8 lg:p-16 space-y-8 flex-1 lg:grid lg:grid-cols-2 lg:gap-16 lg:space-y-0">
-          <div className="space-y-8">
-            {/* Step 1: Model Upload */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <User size={12} className="text-slate-300" /> 1. Unggah Model
+        <div className="p-4 lg:p-4 lg:flex-1 lg:overflow-hidden overflow-y-auto">
+          <div className="lg:grid lg:grid-cols-12 lg:gap-4 lg:h-full lg:overflow-hidden flex flex-col">
+            {/* Column 1: Model & Step Info */}
+            <div className="lg:col-span-3 flex flex-col gap-4 lg:h-full lg:overflow-hidden lg:pr-4 lg:border-r lg:border-slate-200">
+              {/* Model Upload */}
+              <div className="flex-1 flex flex-col min-h-0">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                  <User size={14} className="text-slate-300" /> 1. Foto Model
                 </label>
-                {originalModel && (
-                  <button 
-                    onClick={() => setIsUploaderHidden(!isUploaderHidden)}
-                    className="text-[9px] font-black uppercase tracking-widest hover:underline"
-                    style={{ color: primaryColor }}
-                  >
-                    {isUploaderHidden ? 'Ganti Model' : 'Tutup Panel'}
-                  </button>
-                )}
+                <div className="lg:flex-1 min-h-0">
+                  <ImageUploader
+                    label="Pilih Foto Model"
+                    image={originalModel}
+                    onImageSelect={handleModelUpload}
+                    onClear={() => { setOriginalModel(null); setNeutralModel(null); setShirtModel(null); setFinalModel(null); }}
+                    aspectRatio="9-16"
+                    labelInside
+                  />
+                </div>
               </div>
-              
-              <AnimatePresence mode="wait">
-                {!isUploaderHidden && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="overflow-hidden"
-                  >
+
+              {/* Status Info */}
+              <div className="shrink-0 space-y-2">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <ShieldCheck size={14} className="text-slate-300" /> AI Status
+                </label>
+                <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Model Ready</span>
+                      <div className={`w-2 h-2 rounded-full ${neutralModel ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-slate-200'}`} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Top Fitting</span>
+                      <div className={`w-2 h-2 rounded-full ${shirtModel ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-slate-200'}`} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Final Output</span>
+                      <div className={`w-2 h-2 rounded-full ${finalModel ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-slate-200'}`} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Column 2: Garment Selections */}
+            <div className="lg:col-span-3 flex flex-col gap-4 lg:h-full lg:overflow-hidden pt-6 lg:pt-0 lg:px-4 lg:border-r lg:border-slate-200">
+               {/* Shirt Selection */}
+               <div className="flex-1 flex flex-col min-h-0">
+                  <label className={`text-[11px] font-black uppercase tracking-widest flex items-center gap-2 mb-2 ${neutralModel ? 'text-slate-400' : 'text-slate-200'}`}>
+                    <Shirt size={14} className={neutralModel ? 'text-slate-300' : 'text-slate-100'} /> 2. Pilih Atasan
+                  </label>
+                  <div className="flex-1 min-h-0 relative">
                     <ImageUploader 
-                      label="Pilih Foto Model" 
-                      image={originalModel} 
-                      onImageSelect={handleModelUpload} 
-                      onClear={() => { setOriginalModel(null); setNeutralModel(null); }} 
-                      aspectRatio="9-16" 
+                      label="Upload Baju" 
+                      image={uploadedShirt} 
+                      onImageSelect={(img) => { setUploadedShirt(img); setShirtModel(null); setFinalModel(null); }} 
+                      onClear={() => { setUploadedShirt(null); setShirtModel(null); setFinalModel(null); }} 
+                      aspectRatio="square" 
                       labelInside
                     />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Step 2: Shirt Selection */}
-            <div className="space-y-4 pt-6 border-t border-slate-100">
-              <label className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${neutralModel ? 'text-slate-400' : 'text-slate-200'}`}>
-                <Shirt size={12} className={neutralModel ? 'text-slate-300' : 'text-slate-100'} /> 2. Ganti Atasan
-              </label>
-              
-              {neutralModel ? (
-                <div className="space-y-4">
-                  <ImageUploader 
-                    label="Pilih Gambar Baju" 
-                    image={uploadedShirt} 
-                    onImageSelect={(img) => { setUploadedShirt(img); setShirtModel(null); setFinalModel(null); }} 
-                    onClear={() => { setUploadedShirt(null); setShirtModel(null); setFinalModel(null); }} 
-                    aspectRatio="square" 
-                    labelInside
-                  />
-                  <button
-                    disabled={processing.isProcessing || !uploadedShirt}
-                    onClick={handleApplyShirt}
-                    className="w-full disabled:bg-slate-300 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] active:scale-[0.98]"
-                    style={{ backgroundColor: processing.isProcessing || !uploadedShirt ? undefined : primaryColor }}
-                  >
-                    {processing.isProcessing && !shirtModel ? <RefreshCw size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                    <span>{shirtModel ? "GANTI LAGI" : "PASANG ATASAN"}</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="p-8 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-100 opacity-50">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-tight">Selesaikan Langkah 1</p>
-                </div>
-              )}
-            </div>
-
-            {/* Step 3: Pants Selection */}
-            <div className="space-y-4 pt-6 border-t border-slate-100">
-              <label className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${shirtModel ? 'text-slate-400' : 'text-slate-200'}`}>
-                <Layers size={12} className={shirtModel ? 'text-slate-300' : 'text-slate-100'} /> 3. Ganti Bawahan
-              </label>
-              
-              {shirtModel ? (
-                <div className="space-y-4">
-                  <ImageUploader 
-                    label="Pilih Gambar Celana" 
-                    image={uploadedPants} 
-                    onImageSelect={(img) => { setUploadedPants(img); setFinalModel(null); }} 
-                    onClear={() => { setUploadedPants(null); setFinalModel(null); }} 
-                    aspectRatio="square" 
-                    labelInside
-                  />
-                  <button
-                    disabled={processing.isProcessing || !uploadedPants}
-                    onClick={handleApplyPants}
-                    className="w-full bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    {processing.isProcessing && shirtModel && !finalModel ? <RefreshCw size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                    <span>{finalModel ? "GANTI LAGI" : "PASANG BAWAHAN"}</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="p-8 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-100 opacity-50">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-tight">Pasang atasan dulu</p>
-                </div>
-              )}
-            </div>
-
-            {/* Step 4: Aspect Ratio */}
-            <div className="space-y-4 pt-6 border-t border-slate-100">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <Maximize2 size={12} className="text-slate-300" /> 4. Aspek Rasio
-              </label>
-              <div className="grid grid-cols-5 gap-2">
-                {['9:16', '3:4', '1:1', '4:3', '16:9'].map((ratio) => (
-                  <button
-                    key={ratio}
-                    onClick={() => setAspectRatio(ratio)}
-                    className={`py-3 rounded-xl text-[10px] font-black transition-all border-2 ${
-                      aspectRatio === ratio 
-                        ? 'text-white shadow-lg' 
-                        : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200'
-                    }`}
-                    style={{ 
-                      backgroundColor: aspectRatio === ratio ? primaryColor : undefined,
-                      borderColor: aspectRatio === ratio ? primaryColor : undefined
-                    }}
-                  >
-                    {ratio}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Result Area */}
-          <div className="space-y-4 lg:pt-0 pt-6 border-t lg:border-t-0 border-slate-100 lg:sticky lg:top-8 self-start">
-            <div className="flex items-center justify-between">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <ImageIcon size={12} className="text-slate-300" /> Hasil Try-On AI
-              </label>
-            </div>
-
-            <div className="flex flex-col items-center w-full">
-              <div 
-                className="w-full max-w-[280px] lg:max-w-full bg-white border-2 border-dashed rounded-[32px] flex items-center justify-center overflow-hidden relative group transition-all duration-500"
-                style={{ 
-                  aspectRatio: `${ratioW}/${ratioH}`,
-                  borderColor: afterImage ? 'white' : `${primaryColor}40`,
-                  backgroundColor: afterImage ? 'white' : undefined
-                }}
-              >
-                <AnimatePresence mode="wait">
-                  {processing.isProcessing ? (
-                    <motion.div
-                      key="loading"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="absolute inset-0 flex flex-col items-center justify-center z-30"
-                    >
-                      <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-16 h-16 object-contain animate-spin" alt="Logo" />
-                      <span className="mt-4 text-[10px] font-black uppercase tracking-widest" style={{ color: primaryColor }}>{processing.progress || 'Neural Fitting...'}</span>
-                    </motion.div>
-                  ) : afterImage ? (
-                    <motion.div
-                      key="result"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="w-full h-full relative select-none touch-none"
-                    >
-                      <img src={beforeImage!} className="absolute inset-0 w-full h-full object-cover grayscale opacity-30 blur-[1px]" alt="Original" />
-                      <div className="absolute inset-0 w-full h-full pointer-events-none" style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}>
-                        <img src={afterImage} className="absolute inset-0 w-full h-full object-cover" alt="Result" />
+                    {!neutralModel && (
+                      <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] z-10 flex items-center justify-center p-6 text-center select-none">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest bg-white/80 px-4 py-2 rounded-lg shadow-sm">Unggah model terlebih dahulu</p>
                       </div>
-                      <input 
-                        type="range" 
-                        min="0" 
-                        max="100" 
-                        value={sliderPos} 
-                        onChange={(e) => setSliderPos(Number(e.target.value))} 
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20" 
-                      />
-                      <div className="absolute top-0 bottom-0 w-[2px] bg-white z-10 pointer-events-none shadow-2xl" style={{ left: `${sliderPos}%` }}>
+                    )}
+                  </div>
+                  <button
+                    disabled={processing.isProcessing || !uploadedShirt || !neutralModel}
+                    onClick={handleApplyShirt}
+                    className="mt-2 w-full py-3 rounded-xl text-white font-black text-[9px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 disabled:opacity-30"
+                    style={{ backgroundColor: primaryColor }}
+                  >
+                    {processing.isProcessing && !shirtModel ? <RefreshCw size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                    <span>PASANG ATASAN</span>
+                  </button>
+               </div>
+
+               {/* Pants Selection */}
+               <div className="flex-1 flex flex-col min-h-0 border-t border-slate-100 pt-4">
+                  <label className={`text-[11px] font-black uppercase tracking-widest flex items-center gap-2 mb-2 ${shirtModel ? 'text-slate-400' : 'text-slate-200'}`}>
+                    <Layers size={14} className={shirtModel ? 'text-slate-300' : 'text-slate-100'} /> 3. Pilih Bawahan
+                  </label>
+                  <div className="flex-1 min-h-0 relative">
+                    <ImageUploader 
+                      label="Upload Celana" 
+                      image={uploadedPants} 
+                      onImageSelect={(img) => { setUploadedPants(img); setFinalModel(null); }} 
+                      onClear={() => { setUploadedPants(null); setFinalModel(null); }} 
+                      aspectRatio="square" 
+                      labelInside
+                    />
+                    {!shirtModel && (
+                      <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] z-10 flex items-center justify-center p-6 text-center select-none">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest bg-white/80 px-4 py-2 rounded-lg shadow-sm">Pasang atasan terlebih dahulu</p>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    disabled={processing.isProcessing || !uploadedPants || !shirtModel}
+                    onClick={handleApplyPants}
+                    className="mt-2 w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 disabled:opacity-30"
+                  >
+                    {processing.isProcessing && shirtModel && !finalModel ? <RefreshCw size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                    <span>PASANG BAWAHAN</span>
+                  </button>
+               </div>
+            </div>
+
+            {/* Column 3: Result Section */}
+            <div className="lg:col-span-6 flex flex-col gap-4 lg:h-full lg:overflow-hidden pt-8 lg:pt-0 lg:pl-4">
+              <div className="flex items-center justify-between shrink-0">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <ImageIcon size={14} className="text-slate-300" /> Rasio
+                </label>
+                
+                {/* Aspect Ratio Selection */}
+                <div className="flex-1 flex items-center gap-2 lg:gap-1 overflow-x-auto no-scrollbar justify-end ml-4">
+                  {['9:16', '3:4', '1:1', '4:3', '16:9'].map((ratio) => (
+                    <button
+                      key={ratio}
+                      onClick={() => setAspectRatio(ratio)}
+                      className={`px-3 py-1.5 lg:px-2 lg:py-1 rounded-lg border transition-all text-[10px] lg:text-[8px] font-black shrink-0 ${
+                        aspectRatio === ratio 
+                          ? 'shadow-sm text-white' 
+                          : 'border-slate-100 bg-slate-50/50 text-slate-400 hover:border-slate-200 shadow-sm'
+                      }`}
+                      style={{
+                        backgroundColor: aspectRatio === ratio ? primaryColor : undefined,
+                        borderColor: aspectRatio === ratio ? primaryColor : undefined,
+                      }}
+                    >
+                      {ratio}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="lg:flex-1 flex items-center justify-center min-h-0 w-full overflow-hidden">
+                <div 
+                  className="bg-slate-50 border-2 border-dashed rounded-[24px] flex items-center justify-center overflow-hidden relative group transition-all duration-500 shadow-inner"
+                  style={{ 
+                    borderColor: afterImage ? 'white' : `${primaryColor}40`,
+                    backgroundColor: afterImage ? 'white' : undefined,
+                    width: '100%',
+                    height: 'auto',
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    aspectRatio: ratioW / ratioH
+                  }}
+                >
+                  <AnimatePresence mode="wait">
+                    {processing.isProcessing ? (
+                      <motion.div
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-white/80 backdrop-blur-sm"
+                      >
+                        <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-16 h-16 object-contain animate-spin" alt="Logo" />
+                        <p className="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">{processing.progress}</p>
+                      </motion.div>
+                    ) : afterImage ? (
+                      <motion.div
+                        key="result"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="w-full h-full relative"
+                      >
+                        {/* BEFORE/AFTER SLIDER */}
+                        <div className="absolute inset-0">
+                          <img src={afterImage} alt="Result" className="w-full h-full object-cover" />
+                        </div>
                         <div 
-                          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-2xl flex items-center justify-center border-2 transition-transform group-hover:scale-110 shadow-xl"
-                          style={{ borderColor: primaryColor }}
+                          className="absolute inset-0 overflow-hidden"
+                          style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
                         >
-                          <div className="flex gap-0.5">
-                            <div className="w-0.5 h-3 rounded-full" style={{ backgroundColor: primaryColor }} />
-                            <div className="w-0.5 h-3 rounded-full" style={{ backgroundColor: primaryColor }} />
+                          <img src={beforeImage!} alt="Original" className="w-full h-full object-cover" />
+                        </div>
+                        
+                        {/* SLIDER HANDLE */}
+                        <div 
+                          className="absolute inset-y-0 w-1 bg-white shadow-[0_0_10px_rgba(0,0,0,0.3)] cursor-ew-resize z-10"
+                          style={{ left: `${sliderPos}%` }}
+                        >
+                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full shadow-xl flex items-center justify-center border-4 border-slate-100">
+                            <div className="flex gap-0.5">
+                              <div className="w-0.5 h-3 bg-slate-300 rounded-full" />
+                              <div className="w-0.5 h-3 bg-slate-300 rounded-full" />
+                            </div>
                           </div>
                         </div>
+                        
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="100" 
+                          value={sliderPos} 
+                          onChange={(e) => setSliderPos(parseInt(e.target.value))}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20"
+                        />
+
+                        {/* LABELS */}
+                        <div className="absolute bottom-6 left-6 px-3 py-1 bg-black/50 backdrop-blur-md rounded-full text-[10px] font-black text-white uppercase tracking-widest z-30">
+                          Original
+                        </div>
+                        <div className="absolute bottom-6 right-6 px-3 py-1 bg-white/50 backdrop-blur-md rounded-full text-[10px] font-black text-slate-900 uppercase tracking-widest z-30">
+                          Try-On AI
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-12 text-center opacity-40">
+                        <div className="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center mb-4">
+                          <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-12 h-12 object-contain grayscale opacity-50" alt="Logo" />
+                        </div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Belum Ada Hasil</p>
                       </div>
-                      <div className="absolute bottom-4 left-4 px-2 py-0.5 bg-black/40 backdrop-blur-md rounded-full text-[6px] font-black text-white uppercase tracking-widest pointer-events-none">Asli</div>
-                      <div className="absolute bottom-4 right-4 px-2 py-0.5 bg-white/40 backdrop-blur-md rounded-full text-[6px] font-black text-black uppercase tracking-widest pointer-events-none">Try-On AI</div>
-                    </motion.div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center p-12 text-center opacity-40">
-                      <div className="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center mb-4">
-                        <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-12 h-12 object-contain grayscale opacity-50" alt="Logo" />
-                      </div>
-                      <p className="text-[10px] font-black uppercase tracking-widest">Belum Ada Hasil</p>
-                    </div>
-                  )}
-                </AnimatePresence>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="grid grid-cols-5 gap-2 w-full max-w-[360px] lg:max-w-full mx-auto mt-8">
-                <button
-                  onClick={() => setIsFullPreviewOpen(true)}
-                  disabled={!afterImage || processing.isProcessing}
-                  className={`flex items-center justify-center py-4 bg-white border-2 rounded-2xl transition-all ${
-                    !afterImage || processing.isProcessing 
-                      ? 'opacity-30 border-slate-50 cursor-not-allowed' 
-                      : 'border-slate-100 hover:border-slate-200'
-                  }`}
-                  style={{ color: primaryColor }}
-                  title="Preview"
-                >
-                  <Eye size={20} />
-                </button>
-                <button
-                  onClick={() => setIsCropping(true)}
-                  disabled={!afterImage || processing.isProcessing}
-                  className={`flex items-center justify-center py-4 bg-white border-2 rounded-2xl transition-all ${
-                    !afterImage || processing.isProcessing 
-                      ? 'opacity-30 border-slate-50 cursor-not-allowed' 
-                      : 'border-slate-100 hover:border-slate-200'
-                  }`}
-                  style={{ color: primaryColor }}
-                  title="Crop"
-                >
-                  <Scissors size={20} />
-                </button>
-                <button
-                  onClick={handleSharpen}
-                  disabled={!afterImage || processing.isProcessing}
-                  className={`flex items-center justify-center py-4 bg-white border-2 rounded-2xl transition-all ${
-                    !afterImage || processing.isProcessing 
-                      ? 'opacity-30 border-slate-50 cursor-not-allowed' 
-                      : 'border-slate-100 hover:border-slate-200'
-                  }`}
-                  style={{ color: primaryColor }}
-                  title="Tajamkan"
-                >
-                  <Zap size={20} />
-                </button>
-                <button
-                  onClick={handleReset}
-                  disabled={!afterImage || processing.isProcessing || afterImage === initialResultImage}
-                  className={`flex items-center justify-center py-4 bg-white border-2 rounded-2xl transition-all ${
-                    !afterImage || processing.isProcessing || afterImage === initialResultImage
-                      ? 'opacity-30 border-slate-50 cursor-not-allowed' 
-                      : 'border-slate-100 hover:border-slate-200'
-                  }`}
-                  style={{ color: primaryColor }}
-                  title="Reset"
-                >
-                  <Recycle size={20} />
-                </button>
-                <button
-                  onClick={downloadResult}
-                  disabled={!afterImage || processing.isProcessing}
-                  className={`flex items-center justify-center py-4 text-white rounded-2xl transition-all ${
-                    !afterImage || processing.isProcessing 
-                      ? 'bg-slate-300 opacity-50 cursor-not-allowed' 
-                      : ''
-                  }`}
-                  style={{ backgroundColor: !afterImage || processing.isProcessing ? undefined : primaryColor }}
-                  title="Download"
-                >
-                  <Download size={20} />
-                </button>
-              </div>
+                {/* Action Buttons */}
+                <div className="grid grid-cols-5 gap-2 lg:gap-3 w-full mx-auto shrink-0">
+                  <button 
+                    onClick={() => setIsFullPreviewOpen(true)}
+                    disabled={!afterImage || processing.isProcessing}
+                    title="Preview"
+                    className="py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
+                  >
+                    <Eye size={20} />
+                  </button>
+                  <button 
+                    onClick={() => setIsCropping(true)}
+                    disabled={!afterImage || processing.isProcessing}
+                    title="Crop"
+                    className="py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
+                  >
+                    <Scissors size={20} />
+                  </button>
+                  <button 
+                    onClick={handleSharpen}
+                    disabled={!afterImage || processing.isProcessing}
+                    title="Sharpen"
+                    className="py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-rose-500 transition-all disabled:opacity-30 bg-white shadow-sm"
+                  >
+                    <Zap size={20} />
+                  </button>
+                  <button 
+                    onClick={handleReset}
+                    disabled={!afterImage || processing.isProcessing || afterImage === initialResultImage}
+                    title="Reset"
+                    className="py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
+                  >
+                    <Recycle size={20} />
+                  </button>
+                  <button 
+                    onClick={downloadResult}
+                    disabled={!afterImage || processing.isProcessing}
+                    title="Download"
+                    className="py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
+                  >
+                    <Download size={20} />
+                  </button>
+                </div>
+
+                {/* Error Message */}
+                <AnimatePresence>
+                  {processing.error && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 20 }}
+                      className="bg-rose-50 border-2 border-rose-100 p-5 rounded-2xl text-rose-600 text-[10px] font-black text-center uppercase tracking-widest shrink-0"
+                    >
+                      {processing.error}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
             </div>
           </div>
         </div>
+      </div>
 
-          {/* Error Message */}
-          <AnimatePresence>
-            {processing.error && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                className="bg-rose-50 border-2 border-rose-100 p-5 rounded-2xl text-rose-600 text-[10px] font-black text-center uppercase tracking-widest"
-              >
-                {processing.error}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
 
       {/* Full Preview Modal */}
       <AnimatePresence>

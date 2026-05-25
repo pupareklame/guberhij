@@ -1,8 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-
-const getAI = () => {
-  return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-};
+import { getAI } from "./geminiService";
 
 const getRandomSeed = () => Math.floor(Math.random() * 1000000);
 

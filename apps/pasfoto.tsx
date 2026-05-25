@@ -149,8 +149,8 @@ const GuberPasFoto: React.FC = () => {
   const aspectClass = config.size === '3x4' ? 'aspect-[3/4]' : 'aspect-[2/3]';
 
   return (
-    <div className="h-full bg-slate-50/50 overflow-y-auto lg:overflow-hidden custom-scrollbar">
-      <div className="max-w-2xl lg:max-w-7xl mx-auto min-h-full lg:h-screen bg-white flex flex-col border-x border-slate-100 shadow-sm">
+    <div className="lg:h-screen bg-slate-50/50 lg:overflow-hidden min-h-screen custom-scrollbar overflow-x-hidden text-slate-900">
+      <div className="max-w-2xl lg:max-w-full mx-auto lg:h-full bg-white flex flex-col border-x border-slate-100 shadow-sm">
         {/* Header - Hidden on Desktop */}
         <div 
           className="p-4 border-b border-white/10 rounded-b-[40px] shadow-xl z-20 lg:hidden"
@@ -171,430 +171,421 @@ const GuberPasFoto: React.FC = () => {
           </div>
         </div>
 
-        <div className="p-4 lg:p-6 lg:flex-1 lg:overflow-hidden">
-          <div className="lg:grid lg:grid-cols-12 lg:gap-6 lg:h-full lg:overflow-hidden">
-            {/* Column 1: Face & Gender (Desktop) */}
-            <div className="lg:col-span-3 space-y-6 lg:h-full lg:overflow-y-auto lg:pr-4 custom-scrollbar">
-          {/* Image Uploader */}
-          <div className="space-y-3">
-            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <User size={14} className="text-slate-300" /> 1. Foto Wajah
-            </label>
-            <ImageUploader
-              label="Unggah Foto"
-              image={faceImage}
-              onImageSelect={setFaceImage}
-              aspectRatio="square"
-              labelInside
-            />
-          </div>
-
-          {/* Gender Selection */}
-          <div className="space-y-3">
-            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <User size={14} className="text-slate-300" /> 2. Pilih Jenis Kelamin
-            </label>
-            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-2xl">
-              {(['LAKI_LAKI', 'PEREMPUAN'] as Gender[]).map(g => (
-                <button 
-                  key={g} 
-                  onClick={() => setConfig({...config, gender: g})} 
-                  className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${config.gender === g ? 'bg-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
-                  style={{ color: config.gender === g ? primaryColor : undefined }}
-                >
-                  {g === 'LAKI_LAKI' ? 'Laki-laki' : 'Perempuan'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Hijab Options for Perempuan */}
-          {config.gender === 'PEREMPUAN' && (
-            <motion.div 
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="space-y-4 pt-2 overflow-hidden"
-            >
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Gunakan Hijab</label>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" checked={config.useHijab} onChange={() => setConfig({...config, useHijab: !config.useHijab})} />
-                  <div 
-                    className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all shadow-inner"
-                    style={{ backgroundColor: config.useHijab ? primaryColor : undefined }}
-                  ></div>
+        <div className="p-4 lg:p-4 lg:flex-1 lg:overflow-hidden overflow-y-auto">
+          <div className="lg:grid lg:grid-cols-12 lg:gap-4 lg:h-full lg:overflow-hidden flex flex-col">
+            
+            {/* Column 1: Subject & Gender */}
+            <div className="lg:col-span-3 flex flex-col gap-4 lg:h-full lg:overflow-hidden lg:pr-4 lg:border-r lg:border-slate-200">
+              {/* Image Uploader */}
+              <div className="flex-1 flex flex-col min-h-0">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                  <User size={14} className="text-slate-300" /> 1. Foto Wajah
                 </label>
+                <div className="lg:flex-1 min-h-0">
+                  <ImageUploader
+                    label="Unggah Foto"
+                    image={faceImage}
+                    onImageSelect={setFaceImage}
+                    aspectRatio="square"
+                    labelInside
+                  />
+                </div>
               </div>
 
-              {config.useHijab && (
-                <div className="space-y-3">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <Palette size={14} className="text-slate-300" /> Warna Hijab
-                  </label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {['Khaki', 'Putih', 'Hitam', 'Pink', 'Kustom'].map(color => (
-                      <button 
-                        key={color} 
-                        onClick={() => setConfig({...config, hijabColor: color})}
-                        className={`py-2 rounded-xl border-2 text-[8px] font-black uppercase transition-all ${config.hijabColor === color ? 'scale-105 shadow-md' : 'border-slate-100 bg-white text-slate-400'}`}
-                        style={{ 
-                          borderColor: config.hijabColor === color ? primaryColor : undefined,
-                          backgroundColor: config.hijabColor === color ? primaryColor : undefined,
-                          color: config.hijabColor === color ? 'white' : undefined
-                        }}
-                      >
-                        {color}
-                      </button>
-                    ))}
-                  </div>
-                  {config.hijabColor === 'Kustom' && (
-                    <input 
-                      type="text" 
-                      placeholder="Warna Hijab Kustom..."
-                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 focus:border-teal-500 outline-none uppercase"
-                      style={{ borderColor: primaryColor }}
-                      onChange={(e) => setConfig({...config, hijabColor: e.target.value})}
-                    />
-                  )}
-                </div>
-              )}
-            </motion.div>
-          )}
-        </div>
-
-        {/* Column 2: Outfit & Config (Desktop) */}
-        <div className="lg:col-span-3 space-y-6 lg:h-full lg:overflow-y-auto lg:pr-4 custom-scrollbar pt-6 lg:pt-0">
-          {/* Outfit Categories */}
-          <div className="space-y-3">
-            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <Shirt size={14} className="text-slate-300" /> 3. Pilih Pakaian
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {CATEGORIES.map(cat => (
-                <button 
-                  key={cat.id} 
-                  onClick={() => setConfig({...config, category: cat.id as any})}
-                  className={`flex flex-col items-center justify-center p-2 rounded-2xl border-2 transition-all duration-300 min-h-[50px] ${
-                    config.category === cat.id 
-                      ? 'scale-105' 
-                      : 'border-slate-100 bg-slate-50/50 text-slate-400 hover:border-slate-200 hover:bg-white'
-                  }`}
-                  style={{
-                    backgroundColor: config.category === cat.id ? primaryColor : undefined,
-                    color: config.category === cat.id ? 'white' : undefined,
-                    borderColor: config.category === cat.id ? primaryColor : undefined,
-                  }}
-                >
-                  <span className="text-base mb-1">{cat.icon}</span>
-                  <span className={`text-[7px] font-black uppercase tracking-tight text-center leading-tight ${config.category === cat.id ? 'text-white' : 'text-slate-500'}`}>
-                    {cat.name}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {config.category === 'CUSTOM' && (
-            <motion.div 
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="space-y-3 overflow-hidden"
-            >
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <Shirt size={14} className="text-slate-300" /> Baju Kustom
-              </label>
-              <ImageUploader
-                label="Unggah Baju"
-                image={customOutfit}
-                onImageSelect={setCustomOutfit}
-                aspectRatio="square"
-                labelInside
-              />
-            </motion.div>
-          )}
-
-          {/* Tie Selection */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <Shirt size={14} className="text-slate-300" /> 4. Opsi Dasi
-              </label>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" checked={config.useTie} onChange={() => setConfig({...config, useTie: !config.useTie, tieStyle: !config.useTie ? 'SD' : 'TANPA_DASI'})} />
-                <div 
-                  className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all shadow-inner"
-                  style={{ backgroundColor: config.useTie ? primaryColor : undefined }}
-                ></div>
-              </label>
-            </div>
-
-            {config.useTie && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                className="space-y-3 overflow-hidden"
-              >
-                <div className="grid grid-cols-2 gap-2">
-                  {TIE_STYLES.filter(t => t.id !== 'TANPA_DASI').map(tie => (
+              {/* Gender Selection */}
+              <div className="shrink-0 space-y-2">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <User size={14} className="text-slate-300" /> 2. Jenis Kelamin
+                </label>
+                <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-slate-100 rounded-2xl">
+                  {(['LAKI_LAKI', 'PEREMPUAN'] as Gender[]).map(g => (
                     <button 
-                      key={tie.id} 
-                      onClick={() => setConfig({...config, tieStyle: tie.id as any})}
-                      className={`flex flex-col items-center justify-center p-2 rounded-2xl border-2 transition-all duration-300 min-h-[50px] ${
-                        config.tieStyle === tie.id 
-                          ? 'scale-105' 
-                          : 'border-slate-100 bg-slate-50/50 text-slate-400 hover:border-slate-200 hover:bg-white'
-                      }`}
-                      style={{
-                        backgroundColor: config.tieStyle === tie.id ? primaryColor : undefined,
-                        color: config.tieStyle === tie.id ? 'white' : undefined,
-                        borderColor: config.tieStyle === tie.id ? primaryColor : undefined,
-                      }}
+                      key={g} 
+                      onClick={() => setConfig({...config, gender: g})} 
+                      className={`py-2 rounded-xl text-[10px] font-black uppercase transition-all ${config.gender === g ? 'bg-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                      style={{ color: config.gender === g ? primaryColor : undefined }}
                     >
-                      <span className="text-base mb-1">{tie.icon}</span>
-                      <span className={`text-[7px] font-black uppercase tracking-tight text-center leading-tight ${config.tieStyle === tie.id ? 'text-white' : 'text-slate-500'}`}>
-                        {tie.name}
-                      </span>
+                      {g === 'LAKI_LAKI' ? 'Pria' : 'Wanita'}
                     </button>
                   ))}
                 </div>
-              </motion.div>
-            )}
-          </div>
 
-          {/* Background Color */}
-          <div className="space-y-3">
-            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <Palette size={14} className="text-slate-300" /> 5. Warna Background
-            </label>
-            <div className="grid grid-cols-4 gap-2">
-              {['Biru', 'Merah', 'Putih', 'Kuning'].map(color => (
-                <button 
-                  key={color} 
-                  onClick={() => setConfig({...config, bgColor: color})}
-                  className={`h-10 rounded-xl border-2 transition-all flex items-center justify-center ${config.bgColor === color ? 'scale-105 shadow-md' : 'border-slate-100 bg-white'}`}
-                  style={{ borderColor: config.bgColor === color ? primaryColor : undefined }}
-                >
-                  <div className={`w-5 h-5 rounded-full shadow-inner ${color === 'Biru' ? 'bg-blue-600' : color === 'Merah' ? 'bg-red-600' : color === 'Putih' ? 'bg-white border border-slate-200' : 'bg-yellow-400'}`} />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Size Selection */}
-          <div className="space-y-3">
-            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <Maximize size={14} className="text-slate-300" /> 6. Ukuran Cetak
-            </label>
-            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-2xl">
-              {(['3x4', '4x6'] as FotoSize[]).map(s => (
-                <button 
-                  key={s} 
-                  onClick={() => setConfig({...config, size: s})} 
-                  className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${config.size === s ? 'bg-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
-                  style={{ color: config.size === s ? primaryColor : undefined }}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Name Tag Toggle */}
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center justify-between">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Nama Dada</label>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" checked={config.useNameTag} onChange={() => setConfig({...config, useNameTag: !config.useNameTag})} />
-                <div 
-                  className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all shadow-inner"
-                  style={{ backgroundColor: config.useNameTag ? primaryColor : undefined }}
-                ></div>
-              </label>
-            </div>
-
-            {config.useNameTag && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                className="space-y-3 overflow-hidden"
-              >
-                <input 
-                  type="text" 
-                  value={config.nameTagText}
-                  onChange={(e) => setConfig({...config, nameTagText: e.target.value})}
-                  placeholder="NAMA LENGKAP"
-                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-2 text-[10px] font-bold text-slate-700 focus:border-teal-500 outline-none uppercase"
-                  style={{ borderColor: primaryColor }}
-                />
-                <div className="flex bg-slate-100 p-1 rounded-xl gap-2">
-                  <button onClick={() => setConfig({...config, nameTagMaterial: 'HITAM'})} className={`flex-1 py-1.5 rounded-lg text-[8px] font-black uppercase transition-all ${config.nameTagMaterial === 'HITAM' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400'}`}>Hitam</button>
-                  <button onClick={() => setConfig({...config, nameTagMaterial: 'EMAS'})} className={`flex-1 py-1.5 rounded-lg text-[8px] font-black uppercase transition-all ${config.nameTagMaterial === 'EMAS' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-400'}`}>Emas</button>
-                </div>
-              </motion.div>
-            )}
-          </div>
-
-          <button
-            onClick={handleGenerate}
-            disabled={processing.isProcessing || !faceImage}
-            className="w-full disabled:bg-slate-300 text-white py-4 rounded-[24px] font-black uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center group relative overflow-hidden shadow-lg"
-            style={{ 
-              backgroundColor: processing.isProcessing || !faceImage ? undefined : primaryColor,
-            }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
-            {processing.isProcessing ? (
-              <span className="relative z-10 text-xs">SEDANG PROSES...</span>
-            ) : (
-              <span className="text-sm relative z-10">PROSES PAS FOTO</span>
-            )}
-          </button>
-        </div>
-
-        {/* Column 3: Results (Desktop) */}
-        <div className="lg:col-span-6 space-y-4 lg:pt-0 pt-8 border-t lg:border-t-0 border-slate-100 lg:h-full lg:flex lg:flex-col lg:justify-between lg:overflow-hidden">
-          <div className="space-y-4 lg:h-full lg:flex lg:flex-col lg:justify-between">
-            <div className="flex items-center justify-between">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <Camera size={14} className="text-slate-300" /> Hasil Pas Foto
-              </label>
-            </div>
-            
-            <div 
-              className={`w-full max-w-[280px] mx-auto bg-white border-2 border-dashed rounded-[32px] flex items-center justify-center overflow-hidden relative group transition-all duration-500 lg:h-full lg:max-h-[calc(100vh-200px)] lg:w-auto ${aspectClass}`}
-              style={{ 
-                borderColor: resultImage ? 'white' : `${primaryColor}40`,
-                backgroundColor: resultImage ? 'white' : undefined
-              }}
-            >
-              <AnimatePresence mode="wait">
-                {processing.isProcessing ? (
-                  <motion.div
-                    key="loading"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="absolute inset-0 flex flex-col items-center justify-center z-30"
-                  >
-                    <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-16 h-16 object-contain animate-spin" alt="Logo" />
-                  </motion.div>
-                ) : resultImage ? (
-                  <motion.div
-                    key="result"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="w-full h-full relative select-none touch-none"
-                  >
-                    <img src={faceImage!} className="absolute inset-0 w-full h-full object-cover" alt="Original" />
-                    <div className="absolute inset-0 w-full h-full pointer-events-none" style={{ clipPath: `inset(0 0 0 ${sliderPos}%)` }}>
-                      <img src={resultImage} className="absolute inset-0 w-full h-full object-cover" alt="Result" />
-                    </div>
-                    <input 
-                      type="range" 
-                      min="0" 
-                      max="100" 
-                      value={sliderPos} 
-                      onChange={(e) => setSliderPos(Number(e.target.value))} 
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20" 
-                    />
-                    <div className="absolute top-0 bottom-0 w-[2px] bg-white z-10 pointer-events-none" style={{ left: `${sliderPos}%` }}>
-                      <div 
-                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-2xl flex items-center justify-center border-2 transition-transform group-hover:scale-110"
-                        style={{ borderColor: primaryColor }}
-                      >
-                        <div className="flex gap-0.5">
-                          <div className="w-0.5 h-3 rounded-full" style={{ backgroundColor: primaryColor }} />
-                          <div className="w-0.5 h-3 rounded-full" style={{ backgroundColor: primaryColor }} />
-                        </div>
+                {/* Hijab Options for Perempuan */}
+                <AnimatePresence>
+                  {config.gender === 'PEREMPUAN' && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-2 pt-2 border-t border-slate-100 overflow-hidden"
+                    >
+                      <div className="flex items-center justify-between px-1">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Berhijab?</label>
+                        <button
+                          onClick={() => setConfig({...config, useHijab: !config.useHijab})}
+                          className={`w-9 h-5 rounded-full relative transition-all duration-300 ${config.useHijab ? '' : 'bg-slate-300'}`}
+                          style={{ backgroundColor: config.useHijab ? primaryColor : undefined }}
+                        >
+                          <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all duration-300 ${config.useHijab ? 'left-5' : 'left-1'}`} />
+                        </button>
                       </div>
-                    </div>
-                    <div className="absolute bottom-4 left-4 px-2 py-0.5 bg-black/40 backdrop-blur-md rounded-full text-[6px] font-black text-white uppercase tracking-widest pointer-events-none">Before</div>
-                    <div className="absolute bottom-4 right-4 px-2 py-0.5 bg-white/40 backdrop-blur-md rounded-full text-[6px] font-black text-black uppercase tracking-widest pointer-events-none">After</div>
-                  </motion.div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-12 text-center opacity-40">
-                    <div className="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center mb-4">
-                      <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-12 h-12 object-contain grayscale opacity-50" alt="Logo" />
-                    </div>
-                    <p className="text-xs font-black uppercase tracking-widest">Belum Ada Hasil</p>
+
+                      {config.useHijab && (
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-3 gap-1">
+                            {['Putih', 'Hitam', 'Kustom'].map(color => (
+                              <button 
+                                key={color} 
+                                onClick={() => setConfig({...config, hijabColor: color})}
+                                className={`py-1.5 rounded-lg border text-[8px] font-black uppercase transition-all ${config.hijabColor === color ? 'text-white' : 'border-slate-100 bg-white text-slate-400'}`}
+                                style={{ 
+                                  backgroundColor: config.hijabColor === color ? primaryColor : undefined,
+                                  borderColor: config.hijabColor === color ? primaryColor : undefined,
+                                }}
+                              >
+                                {color}
+                              </button>
+                            ))}
+                          </div>
+                          {config.hijabColor === 'Kustom' && (
+                            <input 
+                              type="text" 
+                              placeholder="Ketik warna..."
+                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-[10px] font-bold text-slate-700 outline-none focus:border-slate-400 uppercase"
+                              onChange={(e) => setConfig({...config, hijabColor: e.target.value})}
+                            />
+                          )}
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* Column 2: Outfit & Options */}
+            <div className="lg:col-span-3 flex flex-col gap-4 lg:h-full lg:overflow-hidden pt-6 lg:pt-0 lg:px-4 lg:border-r lg:border-slate-200">
+              <div className="flex-1 flex flex-col min-h-0">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                  <Shirt size={14} className="text-slate-300" /> 3. Pilih Pakaian
+                </label>
+                <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar lg:pr-1">
+                  <div className="grid grid-cols-2 gap-2">
+                    {CATEGORIES.map(cat => (
+                      <button 
+                        key={cat.id} 
+                        onClick={() => setConfig({...config, category: cat.id as any})}
+                        className={`flex flex-col items-center justify-center p-3 rounded-[24px] border-2 transition-all duration-300 min-h-[60px] group ${
+                          config.category === cat.id 
+                            ? 'scale-[1.02] shadow-md border-transparent text-white' 
+                            : 'bg-slate-50/50 border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-white'
+                        }`}
+                        style={{
+                          backgroundColor: config.category === cat.id ? primaryColor : undefined,
+                        }}
+                      >
+                        <span className="text-lg mb-1 transition-transform group-hover:scale-110">{cat.icon}</span>
+                        <span className={`text-[8px] font-black uppercase tracking-tight text-center leading-tight`}>
+                          {cat.name}
+                        </span>
+                      </button>
+                    ))}
                   </div>
+
+                  {config.category === 'CUSTOM' && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="mt-4 overflow-hidden"
+                    >
+                      <ImageUploader
+                        label="Unggah Baju Asli"
+                        image={customOutfit}
+                        onImageSelect={setCustomOutfit}
+                        aspectRatio="square"
+                        labelInside
+                      />
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+
+              <div className="shrink-0 space-y-4 pt-2 border-t border-slate-100">
+                {/* Tie & Color Row */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pakai Dasi?</label>
+                      <button
+                        onClick={() => setConfig({...config, useTie: !config.useTie, tieStyle: !config.useTie ? 'SD' : 'TANPA_DASI'})}
+                        className={`w-9 h-5 rounded-full relative transition-all duration-300 ${config.useTie ? '' : 'bg-slate-300'}`}
+                        style={{ backgroundColor: config.useTie ? primaryColor : undefined }}
+                      >
+                        <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all duration-300 ${config.useTie ? 'left-5' : 'left-1'}`} />
+                      </button>
+                    </div>
+                    {config.useTie && (
+                      <select 
+                        value={config.tieStyle}
+                        onChange={(e) => setConfig({...config, tieStyle: e.target.value as any})}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-[9px] font-bold text-slate-700 focus:border-slate-400 outline-none"
+                      >
+                        {TIE_STYLES.filter(t => t.id !== 'TANPA_DASI').map(tie => (
+                          <option key={tie.id} value={tie.id}>{tie.icon} {tie.name}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right block">Latar Belakang</label>
+                    <div className="flex justify-end gap-1">
+                      {['Biru', 'Merah', 'Putih'].map(color => (
+                        <button 
+                          key={color} 
+                          onClick={() => setConfig({...config, bgColor: color})}
+                          className={`w-8 h-8 rounded-lg border-2 transition-all flex items-center justify-center p-0.5 ${config.bgColor === color ? 'shadow-md scale-110' : 'border-slate-100 bg-white'}`}
+                          style={{ borderColor: config.bgColor === color ? primaryColor : undefined }}
+                        >
+                          <div className={`w-full h-full rounded-md ${color === 'Biru' ? 'bg-blue-600' : color === 'Merah' ? 'bg-red-600' : 'bg-slate-100 border border-slate-200'}`} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Size & Name Tag Row */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ukuran</label>
+                    <div className="flex bg-slate-100 p-1 rounded-xl">
+                      {(['3x4', '4x6'] as FotoSize[]).map(s => (
+                        <button 
+                          key={s} 
+                          onClick={() => setConfig({...config, size: s})} 
+                          className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${config.size === s ? 'bg-white shadow-sm' : 'text-slate-400'}`}
+                          style={{ color: config.size === s ? primaryColor : undefined }}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nama Dada</label>
+                      <button
+                        onClick={() => setConfig({...config, useNameTag: !config.useNameTag})}
+                        className={`w-9 h-5 rounded-full relative transition-all duration-300 ${config.useNameTag ? '' : 'bg-slate-300'}`}
+                        style={{ backgroundColor: config.useNameTag ? primaryColor : undefined }}
+                      >
+                        <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all duration-300 ${config.useNameTag ? 'left-5' : 'left-1'}`} />
+                      </button>
+                    </div>
+                    {config.useNameTag && (
+                      <input 
+                        type="text" 
+                        value={config.nameTagText}
+                        onChange={(e) => setConfig({...config, nameTagText: e.target.value})}
+                        placeholder="Ketik nama..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-[9px] font-bold text-slate-700 focus:border-slate-400 outline-none uppercase"
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile Generate Button */}
+              <div className="lg:hidden pt-4">
+                <button 
+                  onClick={handleGenerate}
+                  disabled={processing.isProcessing || !faceImage}
+                  className="w-full py-5 rounded-3xl text-white font-black uppercase tracking-[0.2em] text-sm shadow-xl transition-all active:scale-95 disabled:opacity-30 flex items-center justify-center gap-3"
+                  style={{ 
+                    backgroundColor: (processing.isProcessing || !faceImage) ? '#cbd5e1' : primaryColor 
+                  }}
+                >
+                  PROSES PAS FOTO
+                </button>
+              </div>
+            </div>
+
+            {/* Column 3: Result Area */}
+            <div className="lg:col-span-6 flex flex-col gap-4 lg:h-full lg:overflow-hidden pt-8 lg:pt-0 lg:pl-4">
+              <div className="flex items-center justify-between shrink-0">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Camera size={14} className="text-slate-300" /> Hasil Studio
+                </label>
+                <div className="flex items-center gap-2">
+                   <div className="px-3 py-1 bg-slate-100 rounded-full text-[9px] font-black text-slate-500 uppercase tracking-widest border border-slate-200">
+                    Neural Rendering Engine v2
+                   </div>
+                </div>
+              </div>
+              
+              <div className="lg:flex-1 flex items-center justify-center min-h-0 w-full overflow-hidden">
+                <div 
+                  className={`bg-slate-50 border-2 border-dashed rounded-[24px] flex items-center justify-center overflow-hidden relative group transition-all duration-500 shadow-inner ${aspectClass}`}
+                  style={{ 
+                    borderColor: resultImage ? 'white' : `${primaryColor}40`,
+                    backgroundColor: resultImage ? 'white' : undefined,
+                    width: '100%',
+                    height: 'auto',
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    aspectRatio: currentAspect.toString()
+                  }}
+                >
+                  <AnimatePresence mode="wait">
+                    {processing.isProcessing ? (
+                      <motion.div
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-white/80 backdrop-blur-sm px-6 text-center"
+                      >
+                        <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-16 h-16 object-contain animate-spin" alt="Logo" />
+                        <p className="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">
+                          {processing.progress || 'Neural Studio sedang menjahit...'}
+                        </p>
+                      </motion.div>
+                    ) : resultImage ? (
+                      <motion.div
+                        key="result"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="w-full h-full relative"
+                      >
+                        {/* BEFORE/AFTER SLIDER */}
+                        <div className="absolute inset-0">
+                          <img src={resultImage} alt="Result" className="w-full h-full object-cover" />
+                        </div>
+                        <div 
+                          className="absolute inset-0 overflow-hidden shadow-2xl"
+                          style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
+                        >
+                          <img src={faceImage!} alt="Original" className="w-full h-full object-cover" />
+                        </div>
+                        
+                        {/* SLIDER HANDLE */}
+                        <div 
+                          className="absolute inset-y-0 w-1 bg-white shadow-[0_0_10px_rgba(0,0,0,0.3)] cursor-ew-resize z-10"
+                          style={{ left: `${sliderPos}%` }}
+                        >
+                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full shadow-xl flex items-center justify-center border-4 border-slate-100">
+                            <div className="flex gap-0.5">
+                              <div className="w-0.5 h-3 bg-slate-300 rounded-full" />
+                              <div className="w-0.5 h-3 bg-slate-300 rounded-full" />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="100" 
+                          value={sliderPos} 
+                          onChange={(e) => setSliderPos(parseInt(e.target.value))}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20"
+                        />
+
+                        {/* LABELS */}
+                        <div className="absolute bottom-6 left-6 px-3 py-1 bg-black/50 backdrop-blur-md rounded-full text-[10px] font-black text-white uppercase tracking-widest z-30">
+                          Asli
+                        </div>
+                        <div className="absolute bottom-6 right-6 px-3 py-1 bg-white/50 backdrop-blur-md rounded-full text-[10px] font-black text-slate-900 uppercase tracking-widest z-30">
+                          Pas Foto
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-12 text-center opacity-40">
+                        <div className="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center mb-4">
+                          <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-12 h-12 object-contain grayscale opacity-50" alt="Logo" />
+                        </div>
+                        <p className="text-xs font-black uppercase tracking-widest">Belum Ada Hasil</p>
+                      </div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-5 lg:grid-cols-7 gap-2 lg:gap-3 w-full mx-auto shrink-0">
+                <button 
+                  onClick={handleGenerate}
+                  disabled={processing.isProcessing || !faceImage}
+                  title="Generate"
+                  className="hidden lg:flex order-5 lg:order-first col-span-1 lg:col-span-2 py-4 rounded-2xl border-2 text-white items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg disabled:opacity-30"
+                  style={{ 
+                    backgroundColor: (processing.isProcessing || !faceImage) ? '#cbd5e1' : primaryColor, 
+                    borderColor: (processing.isProcessing || !faceImage) ? '#cbd5e1' : primaryColor 
+                  }}
+                >
+                  <span className="font-black uppercase tracking-widest text-[10px]">REGENERASI</span>
+                </button>
+
+                <button 
+                  onClick={() => setShowPreview(true)}
+                  disabled={processing.isProcessing || !resultImage}
+                  title="Preview"
+                  className="order-1 lg:order-2 py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
+                >
+                  <Eye size={20} />
+                </button>
+                <button 
+                  onClick={() => setIsCropping(true)}
+                  disabled={processing.isProcessing || !resultImage}
+                  title="Crop"
+                  className="order-2 lg:order-3 py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
+                >
+                  <Scissors size={20} />
+                </button>
+                <button 
+                  onClick={handleSharpen}
+                  disabled={processing.isProcessing || !resultImage}
+                  title="Sharpen"
+                  className="order-3 lg:order-4 py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
+                >
+                  <Zap size={20} />
+                </button>
+                <button 
+                  onClick={() => setResultImage(originalResult)}
+                  disabled={processing.isProcessing || !resultImage || resultImage === originalResult}
+                  title="Reset"
+                  className="order-4 lg:order-5 py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
+                >
+                  <Recycle size={20} />
+                </button>
+                <button 
+                  onClick={handleDownload}
+                  disabled={processing.isProcessing || !resultImage}
+                  title="Download"
+                  className="order-6 lg:order-6 py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
+                >
+                  <Download size={20} />
+                </button>
+              </div>
+
+              {/* Error Message */}
+              <AnimatePresence>
+                {processing.error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    className="bg-rose-50 border-2 border-rose-100 p-5 rounded-2xl text-rose-600 text-[10px] font-black text-center uppercase tracking-widest shrink-0"
+                  >
+                    {processing.error}
+                  </motion.div>
                 )}
               </AnimatePresence>
             </div>
-
-            {/* Action Buttons */}
-            <div className="grid grid-cols-5 gap-3 max-w-[280px] mx-auto w-full">
-              <button
-                onClick={() => setShowPreview(true)}
-                disabled={!resultImage || processing.isProcessing}
-                className={`flex items-center justify-center py-4 bg-white border-2 rounded-2xl transition-all ${
-                  !resultImage || processing.isProcessing 
-                    ? 'opacity-30 border-slate-50 cursor-not-allowed' 
-                    : 'border-slate-100 hover:border-slate-200'
-                }`}
-                style={{ color: primaryColor }}
-                title="Preview"
-              >
-                <Eye size={20} />
-              </button>
-              <button
-                onClick={() => setResultImage(originalResult)}
-                disabled={!resultImage || processing.isProcessing || resultImage === originalResult}
-                className={`flex items-center justify-center py-4 bg-white border-2 rounded-2xl transition-all ${
-                  !resultImage || processing.isProcessing || resultImage === originalResult
-                    ? 'opacity-30 border-slate-50 cursor-not-allowed' 
-                    : 'border-slate-100 hover:border-slate-200'
-                }`}
-                style={{ color: primaryColor }}
-                title="Restore"
-              >
-                <Recycle size={20} />
-              </button>
-              <button
-                onClick={() => setIsCropping(true)}
-                disabled={!resultImage || processing.isProcessing}
-                className={`flex items-center justify-center py-4 bg-white border-2 rounded-2xl transition-all ${
-                  !resultImage || processing.isProcessing 
-                    ? 'opacity-30 border-slate-50 cursor-not-allowed' 
-                    : 'border-slate-100 hover:border-slate-200'
-                }`}
-                style={{ color: primaryColor }}
-                title="Crop"
-              >
-                <Scissors size={20} />
-              </button>
-              <button
-                onClick={handleSharpen}
-                disabled={!resultImage || processing.isProcessing}
-                className={`flex items-center justify-center py-4 bg-white border-2 rounded-2xl transition-all ${
-                  !resultImage || processing.isProcessing 
-                    ? 'opacity-30 border-slate-50 cursor-not-allowed' 
-                    : 'border-slate-100 hover:border-slate-200'
-                }`}
-                style={{ color: primaryColor }}
-                title="Tajamkan"
-              >
-                <Zap size={20} />
-              </button>
-              <button
-                onClick={handleDownload}
-                disabled={!resultImage || processing.isProcessing}
-                className={`flex items-center justify-center py-4 text-white rounded-2xl transition-all ${
-                  !resultImage || processing.isProcessing 
-                    ? 'bg-slate-300 opacity-50 cursor-not-allowed' 
-                    : ''
-                }`}
-                style={{ backgroundColor: !resultImage || processing.isProcessing ? undefined : primaryColor }}
-                title="Download"
-              >
-                <Download size={20} />
-              </button>
-            </div>
           </div>
         </div>
-      </div>
 
-      {/* Crop Modal */}
+
       <AnimatePresence>
         {isCropping && resultImage && (
           <motion.div
@@ -655,6 +646,7 @@ const GuberPasFoto: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
       {/* Preview Modal */}
       <AnimatePresence>
         {showPreview && resultImage && (
@@ -682,10 +674,9 @@ const GuberPasFoto: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-        </div>
-      </div>
     </div>
-  );
+  </div>
+);
 };
 
 export default GuberPasFoto;

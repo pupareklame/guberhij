@@ -1,6 +1,5 @@
 import { GoogleGenAI, GenerateContentResponse, HarmCategory, HarmBlockThreshold } from "@google/genai";
-
-const getAI = () => new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+import { getAI } from "./geminiService";
 
 const cleanBase64 = (base64: string) => {
   return base64.split(',')[1] || base64;
@@ -26,29 +25,37 @@ const extractImageFromResponse = (response: GenerateContentResponse) => {
   return null;
 };
 
-export const generateRealImage = async (prompt: string, aspectRatio: string = "1:1", modelId: string = 'gemini-2.5-flash-image') => {
+export const generateRealImage = async (prompt: string, aspectRatio: string = "1:1", image?: string) => {
   try {
     const ai = getAI();
     
+    const parts: any[] = [];
+    
+    if (image) {
+      parts.push({ inlineData: { data: cleanBase64(image), mimeType: 'image/png' } });
+    }
+    
     const systemPrompt = `
       [PHOTOREALISTIC IMAGE GENERATION TASK]:
-      Create a highly realistic, photorealistic image based on the following user prompt.
+      ${image ? 'Use the uploaded image as a strong visual reference for subject, style, or composition.' : 'Create a highly realistic, photorealistic image from scratch.'}
       
       USER PROMPT: "${prompt}"
       
       [TECHNICAL DIRECTIVES]:
       1. REALISM: The image must look like a real photograph taken with a high-end camera (e.g., Sony A7R IV, 85mm lens).
-      2. TEXTURES: Capture extreme details in textures (e.g., bark of a tree, skin of a nut, leaves, lighting reflections).
+      2. TEXTURES: Capture extreme details in textures (e.g., skin, fabric, nature elements, lighting reflections).
       3. LIGHTING: Use natural, cinematic lighting. Soft shadows, realistic highlights.
       4. COMPOSITION: Professional photography composition.
-      5. WEIRDNESS: If the prompt is unusual (like "tree with peanuts"), render it as if it actually exists in the real world with perfect biological integration.
+      ${image ? '5. MODIFICATION: Apply the changes described in the prompt to the reference image naturally.' : '5. WEIRDNESS: If the prompt is unusual, render it as if it actually exists in the real world with perfect biological/physical integration.'}
       
       OUTPUT: Return ONLY the generated image.
     `;
 
+    parts.push({ text: systemPrompt });
+
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
-      contents: [{ parts: [{ text: systemPrompt }] }],
+      contents: [{ parts }],
       config: {
         imageConfig: {
           aspectRatio: aspectRatio as any,

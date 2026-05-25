@@ -1,7 +1,6 @@
 
 import { GoogleGenAI } from "@google/genai";
-
-const getAI = () => new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+import { getAI } from "./geminiService";
 
 export type HijabOption = 'LANTAI' | 'MANEKIN' | 'FLAT_LAY' | 'HANGER' | 'TABLE_TOP';
 

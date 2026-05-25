@@ -1,12 +1,14 @@
 
 import React, { useRef } from 'react';
 import { useTheme } from '../src/contexts/ThemeContext';
+import { Scissors } from 'lucide-react';
 
 interface ImageUploaderProps {
   label: string;
   image: string | null;
   onImageSelect: (base64: string) => void;
   onClear?: () => void;
+  onCrop?: () => void;
   aspectRatio?: string;
   description?: string;
   labelInside?: boolean;
@@ -18,6 +20,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   image, 
   onImageSelect, 
   onClear,
+  onCrop,
   aspectRatio = '9-16',
   description,
   labelInside = false,
@@ -47,6 +50,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const handleCrop = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onCrop) onCrop();
+  };
+
   const getAspectRatioClass = (ratio: string) => {
     switch (ratio) {
       case '1-1': return 'aspect-square';
@@ -54,7 +62,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       case '4-3': return 'aspect-[4/3]';
       case '9-16': return 'aspect-[9/16]';
       case '16-9': return 'aspect-[16/9]';
-      case 'auto': return 'aspect-auto';
+      case 'auto': 
+      case 'original': return 'aspect-auto';
       default: return 'aspect-square';
     }
   };
@@ -62,12 +71,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   const containerClass = `${getAspectRatioClass(aspectRatio)} w-full mx-auto`;
 
   return (
-    <div className="flex flex-col items-center gap-3 w-full relative">
+    <div className="flex flex-col items-center gap-3 w-full relative h-full">
       {!labelInside && <h3 className="text-sm font-black uppercase tracking-widest" style={{ color: primaryColor }}>{label}</h3>}
       
       <div 
         onClick={handleClick}
-        className={`${containerClass} bg-white border-2 border-dashed rounded-[32px] flex items-center justify-center overflow-hidden cursor-pointer transition-all duration-500 group relative`}
+        className={`${containerClass} bg-white border-2 border-dashed rounded-[32px] flex items-center justify-center overflow-hidden cursor-pointer transition-all duration-500 group relative min-h-[200px] h-full`}
         style={{ 
           borderColor: `${primaryColor}40`,
           boxShadow: shadow || 'none'
@@ -78,18 +87,28 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             <img 
               src={image} 
               alt={label} 
-              className="w-full h-full object-cover select-none pointer-events-none" 
+              className="w-full h-full object-contain select-none pointer-events-none" 
               draggable="false"
             />
             {onClear && (
-              <button
-                onClick={handleClear}
-                className="absolute top-4 right-4 w-10 h-10 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-rose-600 transition-all z-20"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <div className="absolute top-4 right-4 flex gap-2 z-20">
+                {onCrop && (
+                  <button
+                    onClick={handleCrop}
+                    className="w-10 h-10 bg-white/90 backdrop-blur-md text-slate-800 rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all"
+                  >
+                    <Scissors size={18} />
+                  </button>
+                )}
+                <button
+                  onClick={handleClear}
+                  className="w-10 h-10 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-rose-600 transition-all"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             )}
             <div 
               className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"

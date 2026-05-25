@@ -43,7 +43,6 @@ export enum AppId {
   GUBER_JADI_3D = 'GUBER_JADI_3D',
   GUBER_MINIATUR = 'GUBER_MINIATUR',
   GUBER_KARAKTER = 'GUBER_KARAKTER',
-  GUBER_GANTI_ORANG = 'GUBER_GANTI_ORANG',
   GUBER_HIJAB_AI = 'GUBER_HIJAB_AI',
   GUBER_WISATA = 'GUBER_WISATA',
   LOGO_STUDIO = 'LOGO_STUDIO',
@@ -55,10 +54,19 @@ export enum AppId {
   GUBER_EKSTRAK_HIJAB = 'GUBER_EKSTRAK_HIJAB',
   GUBER_JIKANYATA = 'GUBER_JIKANYATA',
   GUBER_ESTETIK = 'GUBER_ESTETIK',
+  GUBER_PRODUK_ESTETIK = 'GUBER_PRODUK_ESTETIK',
   GUBER_MOCKUP_BAJU = 'GUBER_MOCKUP_BAJU',
   GUBER_CITACITA = 'GUBER_CITACITA',
   GUBER_GEMUKIN = 'GUBER_GEMUKIN',
-  GUBER_KARPET = 'GUBER_KARPET'
+  GUBER_KARPET = 'GUBER_KARPET',
+  GUBER_FOOD_ESTETIK = 'GUBER_FOOD_ESTETIK',
+  GUBER_GABUNG_PRO = 'GUBER_GABUNG_PRO',
+  COLOR_PICKER = 'COLOR_PICKER',
+  HAIR_TRYON = 'HAIR_TRYON',
+  GUBER_MEMORI = 'GUBER_MEMORI',
+  GUBER_CITACITA2 = 'GUBER_CITACITA2',
+  GUBER_SEPATU = 'GUBER_SEPATU',
+  IMAGE_TO_PROMPT = 'IMAGE_TO_PROMPT'
 }
 
 export interface FotoFashionConfig {
@@ -250,6 +258,8 @@ export interface EstetikConfig {
   lighting: string;
   aspectRatio: '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
   additionalPrompt: string;
+  text?: string;
+  textStyle?: string;
 }
 
 export interface MockupBajuConfig {
@@ -270,4 +280,22 @@ export interface CitaCitaConfig {
   additionalPrompt: string;
   userName: string;
   userJobTitle: string;
+  jerseyColor?: string;
+  jerseyMotif?: string;
+  sleeveType?: 'PENDEK' | 'PANJANG';
+}
+
+export interface SepatuConfig {
+  target: 'ANAK_LAKI' | 'ANAK_PEREMPUAN' | 'DEWASA_LAKI' | 'DEWASA_PEREMPUAN';
+  environment: string;
+  additionalPrompt?: string;
+  orientation?: string;
+  aspectRatio: '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
+  mode?: 'KATALOG' | 'SHOWROOM' | 'POV';
+  logo?: string;
+  soleMotif?: string;
+  showroomAmbiance?: string;
+  showroomColor?: string;
+  showroomComposition?: string;
+  povPreset?: string;
 }

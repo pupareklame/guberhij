@@ -27,24 +27,26 @@ const extractImageFromResponse = (response: GenerateContentResponse) => {
   throw new Error("Data visual tidak ditemukan dalam respon AI. Coba lagi dalam beberapa saat.");
 };
 
-export const generateEditinResult = async (image: string, request: string) => {
+export const generateEditinResult = async (image: string, request: string, aspectRatio: string = "9:16") => {
   const ai = getAI();
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
     contents: [{ 
       parts: [
         { inlineData: { data: cleanBase64(image), mimeType: 'image/png' } },
-        { text: `[EDITIN TASK]: ${request}. Also include a short funny Indonesian joke based on the edit in the text part of the response.` }
+        { text: `[IMAGE EDITING TASK]: ${request}. 
+        Modify the provided image based on the request while maintaining high photorealism and professional quality. 
+        Ensure the modifications integrate seamlessly with the original image's lighting, texture, and style.
+        Return ONLY the modified image.` }
       ] 
     }],
     config: { 
-      imageConfig: { aspectRatio: "9:16" },
+      imageConfig: { aspectRatio: aspectRatio as any },
     }
   });
   
   const imageUrl = extractImageFromResponse(response);
-  const jokePart = response.candidates?.[0]?.content?.parts.find((p: any) => p.text);
-  return { imageUrl, joke: jokePart?.text || "Edit completed!" };
+  return imageUrl;
 };
 
 export const upscaleImage = async (image: string, aspectRatio: string = '1:1') => {

@@ -45,6 +45,8 @@ const DREAM_JOBS = [
   { id: 'ARSITEK', name: 'Arsitek', icon: '📐' },
   { id: 'PROGRAMMER', name: 'Programmer / IT', icon: '💻' },
   { id: 'PETANI_MODERN', name: 'Petani Modern', icon: '🚜' },
+  { id: 'PEMAIN_VOLI', name: 'Pemain Voli', icon: '🏐' },
+  { id: 'PRESIDEN', name: 'Presiden RI', icon: '🇮🇩' },
 ];
 
 const POSES = [
@@ -54,6 +56,8 @@ const POSES = [
   { id: 'STYLISH', name: 'Stylish & Trendy', prompt: 'stylish and trendy pose, fashion-forward' },
   { id: 'SMILING', name: 'Tersenyum Ramah', prompt: 'friendly smiling pose, looking approachable' },
   { id: 'DETERMINED', name: 'Tegas & Berwibawa', prompt: 'determined and authoritative pose, strong presence' },
+  { id: 'SERONG_KANAN', name: 'Setengah Badan Serong Kanan', prompt: 'half-body shot, body angled 45 degrees to the right, facing camera, professional state portrait pose, arms down naturally at sides' },
+  { id: 'SERONG_KIRI', name: 'Setengah Badan Serong Kiri', prompt: 'half-body shot, body angled 45 degrees to the left, facing camera, professional state portrait pose, arms down naturally at sides' },
   { id: 'RELAXED', name: 'Santai & Natural', prompt: 'relaxed and natural pose, casual professional' },
 ];
 
@@ -82,6 +86,25 @@ const GENDERS = [
   { id: 'ANAK_PEREMPUAN', name: 'Anak Perempuan' },
 ];
 
+const JERSEY_MOTIFS = [
+  { id: 'SOLID', name: 'Polos' },
+  { id: 'STRIPES', name: 'Garis-garis (Stripes)' },
+  { id: 'GRADIENT', name: 'Gradasi Modern' },
+  { id: 'DIGITAL_PRINT', name: 'Digital Print Abstract' },
+  { id: 'WAVE', name: 'Ombak (Wave Pattern)' },
+  { id: 'HEXAGON', name: 'Hexagon Tech' },
+];
+
+const JERSEY_COLORS = [
+  { id: 'MERAH', name: 'Merah', hex: '#ef4444' },
+  { id: 'BIRU', name: 'Biru', hex: '#3b82f6' },
+  { id: 'KUNING', name: 'Kuning', hex: '#eab308' },
+  { id: 'HIJAU', name: 'Hijau', hex: '#22c55e' },
+  { id: 'HITAM', name: 'Hitam', hex: '#18181b' },
+  { id: 'PUTIH', name: 'Putih', hex: '#ffffff' },
+  { id: 'ORANGE', name: 'Oranye', hex: '#f97316' },
+];
+
 const GuberCitaCita: React.FC = () => {
   const { primaryColor } = useTheme();
   const [image, setImage] = useState<string | null>(null);
@@ -108,17 +131,20 @@ const GuberCitaCita: React.FC = () => {
     environment: 'FOLLOW_JOB',
     gender: 'PRIA',
     style: 'FOTOREALISTIK',
-    aspectRatio: '3:4',
+    aspectRatio: '9:16',
     additionalPrompt: '',
     userName: '',
     userJobTitle: '',
+    jerseyColor: 'BIRU',
+    jerseyMotif: 'SOLID',
+    sleeveType: 'PENDEK',
   });
 
   const ratios = [
-    { label: '1:1', value: '1:1', class: 'aspect-square' },
-    { label: '3:4', value: '3:4', class: 'aspect-[3/4]' },
-    { label: '4:3', value: '4:3', class: 'aspect-[4/3]' },
     { label: '9:16', value: '9:16', class: 'aspect-[9/16]' },
+    { label: '3:4', value: '3:4', class: 'aspect-[3/4]' },
+    { label: '1:1', value: '1:1', class: 'aspect-square' },
+    { label: '4:3', value: '4:3', class: 'aspect-[4/3]' },
     { label: '16:9', value: '16:9', class: 'aspect-[16/9]' },
   ];
 
@@ -131,7 +157,7 @@ const GuberCitaCita: React.FC = () => {
     if (!image) return;
 
     setResultImage(null);
-    setProcessing({ isProcessing: true, error: null, progress: 'Visualizing Future...' });
+    setProcessing({ isProcessing: true, error: null, progress: 'Menciptakan Masa Depan...' });
 
     try {
       const result = await generateCitaCita(image, config);
@@ -142,6 +168,8 @@ const GuberCitaCita: React.FC = () => {
       setProcessing({ isProcessing: false, error: err.message || "Gagal memproses cita-cita.", progress: '' });
     }
   };
+
+  const currentAspect = ratios.find(r => r.value === config.aspectRatio)?.value.replace(':', '/') || '9/16';
 
   const handleReset = () => {
     if (initialResultImage) {
@@ -178,7 +206,7 @@ const GuberCitaCita: React.FC = () => {
       return;
     }
 
-    setProcessing({ isProcessing: true, error: null, progress: 'Cropping Image...' });
+    setProcessing({ isProcessing: true, error: null, progress: 'Memotong Gambar...' });
     
     try {
       const image = await createImage(resultImage);
@@ -217,11 +245,12 @@ const GuberCitaCita: React.FC = () => {
   };
 
   return (
-    <div className="h-full bg-slate-50/50 overflow-y-auto lg:overflow-hidden custom-scrollbar">
-      <div className="max-w-2xl lg:max-w-7xl mx-auto min-h-full lg:h-screen bg-white flex flex-col border-x border-slate-100 shadow-sm">
-        {/* Header */}
+    <div className="lg:h-screen bg-slate-50/50 lg:overflow-hidden min-h-screen custom-scrollbar overflow-x-hidden text-slate-900 font-sans">
+      <div className="max-w-2xl lg:max-w-full mx-auto lg:h-full bg-white flex flex-col border-x border-slate-100 shadow-sm relative">
+        
+        {/* Header - Hidden on Desktop */}
         <div 
-          className="p-4 border-b border-white/10 rounded-b-[40px] shadow-xl"
+          className="p-4 border-b border-white/10 rounded-b-[40px] shadow-xl z-20 lg:hidden"
           style={{ 
             background: `linear-gradient(135deg, ${primaryColor}, color-mix(in srgb, ${primaryColor}, black 20%))`,
           }}
@@ -233,402 +262,393 @@ const GuberCitaCita: React.FC = () => {
               </div>
               <div className="flex flex-col">
                 <h1 className="text-base font-black text-white tracking-tight leading-none mb-0.5">CITA-CITA AI</h1>
-                <p className="text-[7px] font-bold uppercase tracking-[0.3em] leading-none text-white/60">Neural Career Visualization</p>
+                <p className="text-[7px] font-bold uppercase tracking-[0.3em] leading-none text-white/60">Guber AI Studio</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="p-8 lg:p-12 lg:flex-1 lg:overflow-hidden">
-          <div className="lg:grid lg:grid-cols-2 lg:gap-12 lg:h-full lg:overflow-hidden">
-            <div className="space-y-8 lg:h-full lg:overflow-y-auto lg:pr-6 custom-scrollbar">
-              {/* Image Upload */}
-              <div className="space-y-3">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+        <div className="p-4 lg:p-4 lg:flex-1 lg:overflow-hidden overflow-y-auto">
+          <div className="lg:grid lg:grid-cols-12 lg:gap-4 lg:h-full lg:overflow-hidden flex flex-col font-sans">
+            
+            {/* Column 1: Identity & Subject */}
+            <div className="lg:col-span-3 flex flex-col gap-4 lg:h-full lg:overflow-hidden lg:pr-4 lg:border-r lg:border-slate-200">
+               {/* Subject Upload */}
+               <div className="flex-1 flex flex-col min-h-0">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
                   <User size={14} className="text-slate-300" /> 1. Foto Anda
                 </label>
-                <ImageUploader
-                  label="Pilih Foto Anda"
-                  image={image}
-                  onImageSelect={handleImageUpload}
-                  onClear={() => { setImage(null); }}
-                  aspectRatio="3-4"
-                  labelInside
-                />
+                <div className="lg:flex-1 min-h-0">
+                  <ImageUploader
+                    label="Pilih Foto Anda"
+                    image={image}
+                    onImageSelect={handleImageUpload}
+                    onClear={() => { setImage(null); }}
+                    aspectRatio={config.aspectRatio.replace(':', '-')}
+                    labelInside
+                  />
+                </div>
               </div>
 
-              {/* Name & Title Inputs */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <User size={14} className="text-slate-300" /> Nama Anda
-                  </label>
+              {/* Name & Title */}
+              <div className="shrink-0 space-y-3 p-4 bg-slate-50 rounded-[24px] border border-slate-100">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Nama Lengkap</label>
                   <input 
                     type="text"
                     value={config.userName}
                     onChange={(e) => setConfig({...config, userName: e.target.value})}
-                    placeholder="Masukkan Nama..."
-                    className="w-full bg-slate-100 border-0 rounded-2xl px-4 py-3 text-xs font-bold text-slate-900 outline-none focus:bg-slate-200 transition-all"
+                    placeholder="Contoh: Budi Santoso"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 outline-none focus:border-slate-400 transition-all uppercase"
                   />
                 </div>
-                <div className="space-y-3">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <Briefcase size={14} className="text-slate-300" /> Cita-Cita
-                  </label>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Jabatan Impian</label>
                   <input 
                     type="text"
                     value={config.userJobTitle}
                     onChange={(e) => setConfig({...config, userJobTitle: e.target.value})}
-                    placeholder="Contoh: Dokter Spesialis..."
-                    className="w-full bg-slate-100 border-0 rounded-2xl px-4 py-3 text-xs font-bold text-slate-900 outline-none focus:bg-slate-200 transition-all"
+                    placeholder="Contoh: CEO Termuda"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 outline-none focus:border-slate-400 transition-all italic"
                   />
                 </div>
-              </div>
-
-              {/* Career Config */}
-              <div className="space-y-6">
-                <div className="space-y-3">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <Briefcase size={14} className="text-slate-300" /> 2. Pilih Cita-Cita
-                  </label>
-                  <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-2xl">
-                    <select 
-                      value={config.dreamJob}
-                      onChange={(e) => setConfig({...config, dreamJob: e.target.value})}
-                      className="col-span-2 w-full bg-white border-0 rounded-xl px-4 py-3 text-xs font-bold text-slate-900 outline-none transition-all appearance-none cursor-pointer"
-                    >
-                      {DREAM_JOBS.map(job => (
-                        <option key={job.id} value={job.id}>{job.icon} {job.name}</option>
-                      ))}
-                    </select>
-                  </div>
+                
+                <div className="pt-2 border-t border-slate-200 space-y-1">
+                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Kategori</label>
+                   <select 
+                    value={config.gender}
+                    onChange={(e) => setConfig({...config, gender: e.target.value as any})}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 outline-none appearance-none cursor-pointer"
+                  >
+                    {GENDERS.map(g => (
+                      <option key={g.id} value={g.id}>{g.name}</option>
+                    ))}
+                  </select>
                 </div>
+              </div>
+            </div>
 
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                      <User size={14} className="text-slate-300" /> 3. Kategori
-                    </label>
-                    <div className="p-1 bg-slate-100 rounded-2xl">
-                      <select 
-                        value={config.gender}
-                        onChange={(e) => setConfig({...config, gender: e.target.value as any})}
-                        className="w-full bg-white border-0 rounded-xl px-4 py-3 text-xs font-bold text-slate-900 outline-none transition-all appearance-none cursor-pointer"
+            {/* Column 2: Career Config */}
+            <div className="lg:col-span-3 flex flex-col gap-4 lg:h-full lg:overflow-hidden pt-6 lg:pt-0 lg:px-4 lg:border-r lg:border-slate-200">
+              <div className="flex-1 flex flex-col min-h-0">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                  <Briefcase size={14} className="text-slate-300" /> 2. Pilih Masa Depan
+                </label>
+                
+                <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar lg:pr-1 space-y-6">
+                  {/* Job Presets Grid */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {DREAM_JOBS.map(job => (
+                      <button 
+                        key={job.id} 
+                        onClick={() => setConfig({...config, dreamJob: job.id})}
+                        className={`flex flex-col items-center justify-center p-3 rounded-[24px] border-2 transition-all duration-300 min-h-[64px] group ${
+                          config.dreamJob === job.id 
+                            ? 'scale-[1.02] shadow-md text-white border-transparent' 
+                            : 'bg-slate-50 border-slate-100 text-slate-500 hover:border-slate-200 hover:bg-white'
+                        }`}
+                        style={{ backgroundColor: config.dreamJob === job.id ? primaryColor : undefined }}
                       >
-                        {GENDERS.map(g => (
-                          <option key={g.id} value={g.id}>{g.name}</option>
-                        ))}
-                      </select>
-                    </div>
+                        <span className="text-xl mb-1 transition-transform group-hover:scale-110">{job.icon}</span>
+                        <span className="text-[8px] font-black uppercase text-center leading-tight tracking-tight">{job.name}</span>
+                      </button>
+                    ))}
                   </div>
 
-                  <div className="space-y-3">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                      <Maximize size={14} className="text-slate-300" /> 4. Pose
-                    </label>
-                    <div className="p-1 bg-slate-100 rounded-2xl">
+                  {/* Volley Specific Options */}
+                  <AnimatePresence>
+                    {config.dreamJob === 'PEMAIN_VOLI' && (
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="space-y-4 p-4 bg-slate-50 border border-slate-100 rounded-[28px]"
+                      >
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Warna Jersey</label>
+                            <select 
+                              value={config.jerseyColor}
+                              onChange={(e) => setConfig({...config, jerseyColor: e.target.value})}
+                              className="w-full bg-white border border-slate-200 rounded-lg py-1.5 px-2 text-[10px] font-bold text-slate-900"
+                            >
+                              {JERSEY_COLORS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Motif</label>
+                            <select 
+                              value={config.jerseyMotif}
+                              onChange={(e) => setConfig({...config, jerseyMotif: e.target.value})}
+                              className="w-full bg-white border border-slate-200 rounded-lg py-1.5 px-2 text-[10px] font-bold text-slate-900"
+                            >
+                              {JERSEY_MOTIFS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                            </select>
+                          </div>
+                        </div>
+                        <div className="flex bg-white p-1 rounded-xl border border-slate-200">
+                          {(['PENDEK', 'PANJANG'] as const).map(s => (
+                            <button
+                              key={s}
+                              onClick={() => setConfig({...config, sleeveType: s})}
+                              className={`flex-1 py-1.5 rounded-lg text-[8px] font-black uppercase transition-all ${config.sleeveType === s ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-400'}`}
+                            >
+                              {s === 'PENDEK' ? 'Pendek' : 'Panjang'}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Pose & Env Inputs */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Pose</label>
                       <select 
                         value={config.pose}
                         onChange={(e) => setConfig({...config, pose: e.target.value})}
-                        className="w-full bg-white border-0 rounded-xl px-4 py-3 text-xs font-bold text-slate-900 outline-none transition-all appearance-none cursor-pointer"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-[10px] font-bold text-slate-900 outline-none"
                       >
-                        {POSES.map(p => (
-                          <option key={p.id} value={p.prompt}>{p.name}</option>
-                        ))}
+                        {POSES.map(p => <option key={p.id} value={p.prompt}>{p.name}</option>)}
                       </select>
                     </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                      <MapPin size={14} className="text-slate-300" /> 5. Lingkungan
-                    </label>
-                    <div className="p-1 bg-slate-100 rounded-2xl">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Latar Belakang</label>
                       <select 
                         value={config.environment}
                         onChange={(e) => setConfig({...config, environment: e.target.value})}
-                        className="w-full bg-white border-0 rounded-xl px-4 py-3 text-xs font-bold text-slate-900 outline-none transition-all appearance-none cursor-pointer"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-[10px] font-bold text-slate-900 outline-none"
                       >
-                        {ENVIRONMENTS.map(env => (
-                          <option key={env.id} value={env.prompt}>{env.name}</option>
-                        ))}
+                        {ENVIRONMENTS.map(env => <option key={env.id} value={env.prompt}>{env.name}</option>)}
                       </select>
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                      <Palette size={14} className="text-slate-300" /> 6. Gaya Visual
-                    </label>
-                    <div className="p-1 bg-slate-100 rounded-2xl">
-                      <select 
-                        value={config.style}
-                        onChange={(e) => setConfig({...config, style: e.target.value as any})}
-                        className="w-full bg-white border-0 rounded-xl px-4 py-3 text-xs font-bold text-slate-900 outline-none transition-all appearance-none cursor-pointer"
-                      >
-                        {STYLES.map(s => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <Sparkles size={14} className="text-slate-300" /> 7. Instruksi Tambahan
-                  </label>
-                  <div className="relative">
+                  {/* Prompt Textarea */}
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Instruksi Tambahan</label>
                     <textarea
                       value={config.additionalPrompt}
                       onChange={(e) => setConfig({...config, additionalPrompt: e.target.value})}
-                      placeholder="Contoh: Tambahkan kacamata, pegang stetoskop..."
-                      className="w-full h-24 p-4 bg-slate-50 border-2 border-slate-100 rounded-3xl text-xs font-medium focus:border-slate-200 focus:outline-none resize-none transition-all"
+                      placeholder="Contoh: Memakai kacamata..."
+                      className="w-full h-20 p-3 bg-slate-50 border-2 border-slate-100 rounded-[20px] text-[10px] font-medium focus:border-slate-300 resize-none outline-none shadow-inner"
                     />
-                    <div className="absolute bottom-4 right-4">
-                      <button
-                        onClick={() => setConfig({...config, additionalPrompt: ''})}
-                        disabled={!config.additionalPrompt.trim() || processing.isProcessing}
-                        className="p-2 bg-white shadow-lg border border-slate-100 rounded-xl text-slate-400 hover:text-rose-500 transition-all disabled:opacity-50"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Aspect Ratio Selection */}
-                <div className="space-y-3">
+              {/* Mobile Generate Button */}
+              <div className="lg:hidden pt-4">
+                <button 
+                  onClick={handleProcessCitaCita}
+                  disabled={processing.isProcessing || !image}
+                  className="w-full py-5 rounded-3xl text-white font-black uppercase tracking-[0.2em] text-sm shadow-xl transition-all active:scale-95 disabled:opacity-30 flex items-center justify-center gap-3"
+                  style={{ 
+                    backgroundColor: (processing.isProcessing || !image) ? '#cbd5e1' : primaryColor 
+                  }}
+                >
+                  WUJUDKAN CITA-CITA
+                </button>
+              </div>
+            </div>
+
+            {/* Column 3: Result Area */}
+            <div className="lg:col-span-6 flex flex-col gap-4 lg:h-full lg:overflow-hidden pt-8 lg:pt-0 lg:pl-4">
+              <div className="flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-4">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <ImageIcon size={14} className="text-slate-300" /> 8. Pilih Aspek Rasio
+                    <Camera size={14} className="text-slate-300" /> Hasil Visualisasi
                   </label>
-                  <div className="grid grid-cols-5 gap-2">
+                  <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
                     {ratios.map((r) => (
                       <button
                         key={r.value}
                         onClick={() => setConfig({...config, aspectRatio: r.value as any})}
-                        className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all duration-300 aspect-square ${
-                          config.aspectRatio === r.value 
-                            ? 'scale-105' 
-                            : 'border-slate-100 bg-slate-50/50 text-slate-400 hover:border-slate-200 hover:bg-white'
-                        }`}
-                        style={{
-                          backgroundColor: config.aspectRatio === r.value ? primaryColor : undefined,
-                          color: config.aspectRatio === r.value ? 'white' : undefined,
-                          borderColor: config.aspectRatio === r.value ? primaryColor : undefined,
-                        }}
+                        className={`px-2 py-1 rounded-md text-[8px] font-black transition-all ${config.aspectRatio === r.value ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400'}`}
                       >
-                        <div className="w-full h-full flex items-center justify-center">
-                          <div className={`${r.class} border-2 border-current rounded-[2px] flex items-center justify-center text-[6px] font-black leading-none ${
-                            ['9:16', '3:4'].includes(r.value) ? 'h-full w-auto' : 'w-full h-auto'
-                          }`}>
-                            <span className={['9:16', '3:4'].includes(r.value) ? '-rotate-90' : ''}>
-                              {r.label}
-                            </span>
-                          </div>
-                        </div>
+                        {r.label}
                       </button>
                     ))}
                   </div>
                 </div>
-              </div>
-
-              <div className="">
-                <button
-                  onClick={handleProcessCitaCita}
-                  disabled={processing.isProcessing || !image}
-                  className="w-full disabled:bg-slate-300 text-white py-5 rounded-[28px] font-black uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center group relative overflow-hidden"
-                  style={{ 
-                    backgroundColor: processing.isProcessing || !image ? undefined : primaryColor,
-                  }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
-                  {processing.isProcessing ? (
-                    <span className="relative z-10">SEDANG PROSES...</span>
-                  ) : (
-                    <span className="text-lg relative z-10">WUJUDKAN CITA-CITA</span>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Result Section */}
-            <div className="space-y-4 lg:pt-0 pt-8 border-t lg:border-t-0 border-slate-100 lg:h-full lg:flex lg:flex-col lg:justify-center">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <ImageIcon size={14} className="text-slate-300" /> Hasil Visualisasi
-                </label>
+                <div className="hidden lg:flex items-center gap-2">
+                   <div className="px-3 py-1 bg-slate-100 rounded-full text-[8px] font-black text-slate-500 uppercase tracking-widest border border-slate-200">
+                     Neural Render Engine v3
+                   </div>
+                </div>
               </div>
               
-              <div 
-                className={`w-full max-w-[280px] lg:max-w-full mx-auto bg-white border-2 border-dashed rounded-[32px] flex items-center justify-center overflow-hidden relative group transition-all duration-500 ${
-                  config.aspectRatio === '1:1' ? 'aspect-square' :
-                  config.aspectRatio === '3:4' ? 'aspect-[3/4]' :
-                  config.aspectRatio === '4:3' ? 'aspect-[4/3]' :
-                  config.aspectRatio === '9:16' ? 'aspect-[9/16]' :
-                  'aspect-[16/9]'
-                }`}
-                style={{ 
-                  borderColor: resultImage ? 'white' : `${primaryColor}40`,
-                  backgroundColor: resultImage ? 'white' : undefined
-                }}
-              >
-                <AnimatePresence mode="wait">
-                  {processing.isProcessing ? (
-                    <motion.div
-                      key="loading"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="absolute inset-0 flex flex-col items-center justify-center z-30"
-                    >
-                      <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-16 h-16 object-contain animate-spin" alt="Logo" />
-                    </motion.div>
-                  ) : resultImage ? (
-                    <motion.div
-                      key="result"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="w-full h-full relative select-none touch-none"
-                    >
-                      <img src={image!} className="absolute inset-0 w-full h-full object-cover" alt="Original" />
-                      <div className="absolute inset-0 w-full h-full pointer-events-none" style={{ clipPath: `inset(0 0 0 ${sliderPos}%)` }}>
-                        <img src={resultImage} className="absolute inset-0 w-full h-full object-cover" alt="Result" />
-                      </div>
-                      <input 
-                        type="range" 
-                        min="0" 
-                        max="100" 
-                        value={sliderPos} 
-                        onChange={(e) => setSliderPos(Number(e.target.value))} 
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20" 
-                      />
-                      <div className="absolute top-0 bottom-0 w-[2px] bg-white z-10 pointer-events-none" style={{ left: `${sliderPos}%` }}>
+              <div className="lg:flex-1 flex items-center justify-center min-h-0 w-full overflow-hidden">
+                <div 
+                  className={`bg-slate-50 border-2 border-dashed rounded-[32px] flex items-center justify-center overflow-hidden relative group transition-all duration-500 shadow-inner ${
+                    config.aspectRatio === '1:1' ? 'aspect-square' :
+                    config.aspectRatio === '3:4' ? 'aspect-[3/4]' :
+                    config.aspectRatio === '4:3' ? 'aspect-[4/3]' :
+                    config.aspectRatio === '9:16' ? 'aspect-[9/16]' :
+                    'aspect-[16/9]'
+                  }`}
+                  style={{ 
+                    borderColor: resultImage ? 'white' : `${primaryColor}40`,
+                    backgroundColor: resultImage ? 'white' : undefined,
+                    width: '100%',
+                    height: 'auto',
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    aspectRatio: currentAspect
+                  }}
+                >
+                  <AnimatePresence mode="wait">
+                    {processing.isProcessing ? (
+                      <motion.div
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-white/80 backdrop-blur-sm px-6 text-center"
+                      >
+                        <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-16 h-16 object-contain animate-spin" alt="Logo" />
+                        <p className="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">
+                          {processing.progress || 'Neural Studio sedang menjahit...'}
+                        </p>
+                      </motion.div>
+                    ) : resultImage ? (
+                      <motion.div
+                        key="result"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="w-full h-full relative group"
+                      >
+                        {/* BEFORE/AFTER SLIDER */}
+                        <div className="absolute inset-0">
+                          <img src={resultImage} alt="Result" className="w-full h-full object-cover" />
+                        </div>
                         <div 
-                          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-2xl flex items-center justify-center border-2 transition-transform group-hover:scale-110"
-                          style={{ borderColor: primaryColor }}
+                          className="absolute inset-0 overflow-hidden shadow-2xl"
+                          style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
                         >
-                          <div className="flex gap-0.5">
-                            <div className="w-0.5 h-3 rounded-full" style={{ backgroundColor: primaryColor }} />
-                            <div className="w-0.5 h-3 rounded-full" style={{ backgroundColor: primaryColor }} />
+                          <img src={image!} alt="Original" className="w-full h-full object-cover" />
+                        </div>
+                        
+                        {/* SLIDER HANDLE */}
+                        <div 
+                          className="absolute inset-y-0 w-1 bg-white shadow-[0_0_10px_rgba(0,0,0,0.3)] cursor-ew-resize z-10"
+                          style={{ left: `${sliderPos}%` }}
+                        >
+                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full shadow-xl flex items-center justify-center border-4 border-slate-100">
+                            <div className="flex gap-0.5">
+                              <div className="w-0.5 h-3 bg-slate-300 rounded-full" />
+                              <div className="w-0.5 h-3 bg-slate-300 rounded-full" />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="absolute bottom-4 left-4 px-2 py-0.5 bg-black/40 backdrop-blur-md rounded-full text-[6px] font-black text-white uppercase tracking-widest pointer-events-none">Before</div>
-                      <div className="absolute bottom-4 right-4 px-2 py-0.5 bg-white/40 backdrop-blur-md rounded-full text-[6px] font-black text-black uppercase tracking-widest pointer-events-none">After</div>
-                      
-                      {/* Caption Overlay */}
-                      {(config.userName || config.userJobTitle) && (
-                        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/60 to-transparent text-white text-center z-30 pointer-events-none">
-                          <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.5 }}
-                          >
-                            <p className="text-sm font-black uppercase tracking-[0.2em] mb-1 drop-shadow-lg">{config.userName}</p>
-                            <div className="flex items-center justify-center gap-2">
-                              <div className="h-[1px] w-4 bg-white/30" />
-                              <p className="text-[9px] font-bold opacity-90 italic tracking-wider">{config.userJobTitle}</p>
-                              <div className="h-[1px] w-4 bg-white/30" />
-                            </div>
-                          </motion.div>
+                        
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="100" 
+                          value={sliderPos} 
+                          onChange={(e) => setSliderPos(parseInt(e.target.value))}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20"
+                        />
+
+                        {/* Caption Overlay */}
+                        {(config.userName || config.userJobTitle) && (
+                          <div className="absolute bottom-0 left-0 right-0 p-8 pt-20 bg-gradient-to-t from-black/90 via-black/40 to-transparent text-white text-center z-30 pointer-events-none group-hover:opacity-100 transition-opacity">
+                            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
+                              <p className="text-sm font-black uppercase tracking-[0.3em] mb-1 drop-shadow-xl">{config.userName}</p>
+                              <p className="text-[10px] font-bold opacity-80 italic tracking-wider px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full inline-block border border-white/20">{config.userJobTitle}</p>
+                            </motion.div>
+                          </div>
+                        )}
+
+                        {/* LABELS */}
+                        <div className="absolute top-6 left-6 px-3 py-1 bg-black/40 backdrop-blur-md rounded-full text-[9px] font-black text-white uppercase tracking-widest z-30">
+                          Asli
                         </div>
-                      )}
-                    </motion.div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center p-12 text-center opacity-40">
-                      <div className="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center mb-4">
-                        <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-12 h-12 object-contain grayscale opacity-50" alt="Logo" />
+                        <div className="absolute top-6 right-6 px-3 py-1 bg-white/40 backdrop-blur-md rounded-full text-[9px] font-black text-slate-900 uppercase tracking-widest z-30">
+                          Masa Depan
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-12 text-center opacity-40">
+                        <div className="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center mb-4">
+                          <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-12 h-12 object-contain grayscale opacity-50" alt="Logo" />
+                        </div>
+                        <p className="text-xs font-black uppercase tracking-widest">Belum Ada Hasil</p>
                       </div>
-                      <p className="text-xs font-black uppercase tracking-widest">Belum Ada Hasil</p>
-                    </div>
-                  )}
-                </AnimatePresence>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-5 gap-2 w-full max-w-[360px] lg:max-w-full mx-auto mt-8">
-                <button
+              <div className="grid grid-cols-5 lg:grid-cols-7 gap-2 lg:gap-3 w-full mx-auto shrink-0 mb-4 lg:mb-0">
+                <button 
+                  onClick={handleProcessCitaCita}
+                  disabled={processing.isProcessing || !image}
+                  className="hidden lg:flex order-5 lg:order-first col-span-1 lg:col-span-2 py-4 rounded-2xl border-2 text-white items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg disabled:opacity-30"
+                  style={{ 
+                    backgroundColor: (processing.isProcessing || !image) ? '#cbd5e1' : primaryColor, 
+                    borderColor: (processing.isProcessing || !image) ? '#cbd5e1' : primaryColor 
+                  }}
+                >
+                  <span className="font-black uppercase tracking-widest text-[10px]">REGENERASI</span>
+                </button>
+
+                <button 
                   onClick={() => setShowPreview(true)}
-                  disabled={!resultImage || processing.isProcessing}
-                  className={`flex items-center justify-center py-4 bg-white border-2 rounded-2xl transition-all ${
-                    !resultImage || processing.isProcessing 
-                      ? 'opacity-30 border-slate-50 cursor-not-allowed' 
-                      : 'border-slate-100 hover:border-slate-200'
-                  }`}
-                  style={{ color: primaryColor }}
-                  title="Preview"
+                  disabled={processing.isProcessing || !resultImage}
+                  className="order-1 lg:order-2 py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
                 >
                   <Eye size={20} />
                 </button>
-                <button
+                <button 
                   onClick={() => setIsCropping(true)}
-                  disabled={!resultImage || processing.isProcessing}
-                  className={`flex items-center justify-center py-4 bg-white border-2 rounded-2xl transition-all ${
-                    !resultImage || processing.isProcessing 
-                      ? 'opacity-30 border-slate-50 cursor-not-allowed' 
-                      : 'border-slate-100 hover:border-slate-200'
-                  }`}
-                  style={{ color: primaryColor }}
-                  title="Crop"
+                  disabled={processing.isProcessing || !resultImage}
+                  className="order-2 lg:order-3 py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
                 >
                   <Scissors size={20} />
                 </button>
-                <button
-                  onClick={() => {}} // Sharpen not implemented for this app
+                <button 
+                  onClick={() => {}} // Sharpen not implemented
                   disabled={true}
-                  className={`flex items-center justify-center py-4 bg-white border-2 rounded-2xl transition-all opacity-30 border-slate-50 cursor-not-allowed`}
-                  style={{ color: primaryColor }}
-                  title="Tajamkan"
+                  className="order-3 lg:order-4 py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm opacity-30"
                 >
                   <Zap size={20} />
                 </button>
-                <button
+                <button 
                   onClick={handleReset}
-                  disabled={!resultImage || processing.isProcessing || resultImage === initialResultImage}
-                  className={`flex items-center justify-center py-4 bg-white border-2 rounded-2xl transition-all ${
-                    !resultImage || processing.isProcessing || resultImage === initialResultImage
-                      ? 'opacity-30 border-slate-50 cursor-not-allowed' 
-                      : 'border-slate-100 hover:border-slate-200'
-                  }`}
-                  style={{ color: primaryColor }}
-                  title="Reset"
+                  disabled={processing.isProcessing || !resultImage || resultImage === initialResultImage}
+                  className="order-4 lg:order-5 py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
                 >
                   <Recycle size={20} />
                 </button>
-                <button
+                <button 
                   onClick={handleDownload}
-                  disabled={!resultImage || processing.isProcessing}
-                  className={`flex items-center justify-center py-4 text-white rounded-2xl transition-all ${
-                    !resultImage || processing.isProcessing 
-                      ? 'bg-slate-300 opacity-50 cursor-not-allowed' 
-                      : ''
-                  }`}
-                  style={{ backgroundColor: !resultImage || processing.isProcessing ? undefined : primaryColor }}
-                  title="Download"
+                  disabled={processing.isProcessing || !resultImage}
+                  className="order-6 lg:order-6 py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
                 >
                   <Download size={20} />
                 </button>
               </div>
+
+              {/* Error Message */}
+              <AnimatePresence>
+                {processing.error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    className="bg-rose-50 border-2 border-rose-100 p-5 rounded-2xl text-rose-600 text-[10px] font-black text-center uppercase tracking-widest shrink-0"
+                  >
+                    {processing.error}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
-
-        {/* Error Message */}
-        <AnimatePresence>
-          {processing.error && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="bg-rose-50 border-2 border-rose-100 p-5 rounded-2xl text-rose-600 text-[10px] font-black text-center uppercase tracking-widest"
-            >
-              {processing.error}
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       {/* Full Screen Preview Modal */}

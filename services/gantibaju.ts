@@ -1,11 +1,6 @@
 // @ais-lock: DO NOT MODIFY - FILE IS FINAL
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-
-const getAI = () => {
-  const apiKey = process.env.API_KEY || 
-                 process.env.GEMINI_API_KEY;
-  return new GoogleGenAI({ apiKey: apiKey as string });
-};
+import { getAI } from "./geminiService";
 
 const cleanBase64 = (base64: string) => {
   return base64.split(',')[1] || base64;

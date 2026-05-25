@@ -12,6 +12,7 @@ import { useTheme } from '../src/contexts/ThemeContext';
 const GantiBaju: React.FC = () => {
   const { primaryColor } = useTheme();
   const [originalModel, setOriginalModel] = useState<string | null>(null);
+  const [beforeImage, setBeforeImage] = useState<string | null>(null);
   const [topAsset, setTopAsset] = useState<string | null>(null);
   const [bottomAsset, setBottomAsset] = useState<string | null>(null);
   const [fullSetAsset, setFullSetAsset] = useState<string | null>(null);
@@ -45,6 +46,7 @@ const GantiBaju: React.FC = () => {
 
   const handleModelUpload = async (base64: string) => {
     setOriginalModel(base64);
+    setBeforeImage(base64);
     setResultImage(null);
   };
 
@@ -68,20 +70,23 @@ const GantiBaju: React.FC = () => {
     }
 
     setResultImage(null);
+    setInitialResultImage(null);
+    setIsCropping(false);
     setProcessing({ isProcessing: true, error: null, progress: 'Neural Outfit Fitting...' });
 
     try {
       let result: string;
       if (mode === 'FULL_SET') {
-        result = await applyGarment(baseModel, fullSetAsset!, 'BOTH', 'Fit this one-piece set perfectly to the model body.', aspectRatio);
+        result = await applyGarment(baseModel, fullSetAsset!, 'BOTH', customPrompt || 'Fit this one-piece set perfectly to the model body.', aspectRatio);
       } else if (mode === 'PARTS') {
-        result = await applyMultiGarments(baseModel, topAsset, bottomAsset, 'Apply these specific items to the correct regions.', aspectRatio);
+        result = await applyMultiGarments(baseModel, topAsset, bottomAsset, customPrompt || 'Apply these specific items to the correct regions.', aspectRatio);
       } else {
         result = await applyPromptGarment(baseModel, customPrompt, aspectRatio);
       }
       
       setResultImage(result);
       setInitialResultImage(result);
+      setBeforeImage(originalModel);
       setProcessing({ isProcessing: false, error: null, progress: '' });
     } catch (err: any) {
       setProcessing({ isProcessing: false, error: err.message || "Gagal mengganti pakaian.", progress: '' });
@@ -106,6 +111,7 @@ const GantiBaju: React.FC = () => {
   const handleReset = () => {
     if (initialResultImage) {
       setResultImage(initialResultImage);
+      setSliderPos(50);
     }
   };
 
@@ -153,33 +159,34 @@ const GantiBaju: React.FC = () => {
     setProcessing({ isProcessing: true, error: null, progress: 'Cropping Image...' });
     
     try {
+      const { width, height, x, y } = croppedAreaPixels;
+      
       // Crop Result Image
       const image = await createImage(resultImage);
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error("Could not get canvas context");
 
-      canvas.width = croppedAreaPixels.width;
-      canvas.height = croppedAreaPixels.height;
+      canvas.width = width;
+      canvas.height = height;
 
-      ctx.drawImage(
-        image,
-        croppedAreaPixels.x,
-        croppedAreaPixels.y,
-        croppedAreaPixels.width,
-        croppedAreaPixels.height,
-        0,
-        0,
-        croppedAreaPixels.width,
-        croppedAreaPixels.height
-      );
-
+      ctx.drawImage(image, x, y, width, height, 0, 0, width, height);
       const croppedResult = canvas.toDataURL('image/png');
-
       setResultImage(croppedResult);
+
+      // Also crop the before image so the slider stays aligned
+      if (beforeImage) {
+        const bImg = await createImage(beforeImage);
+        const bCanvas = document.createElement('canvas');
+        const bCtx = bCanvas.getContext('2d');
+        if (bCtx) {
+          bCanvas.width = width; bCanvas.height = height;
+          bCtx.drawImage(bImg, x, y, width, height, 0, 0, width, height);
+          setBeforeImage(bCanvas.toDataURL('image/png'));
+        }
+      }
+
       setIsCropping(false);
-      
-      // Ensure processing state is cleared after a small delay to allow UI to catch up
       setTimeout(() => {
         setProcessing({ isProcessing: false, error: null, progress: '' });
       }, 100);
@@ -191,11 +198,11 @@ const GantiBaju: React.FC = () => {
   };
 
   return (
-    <div className="h-full bg-slate-50/50 overflow-y-auto lg:overflow-hidden custom-scrollbar">
-      <div className="max-w-2xl lg:max-w-7xl mx-auto min-h-full lg:h-screen bg-white flex flex-col border-x border-slate-100 shadow-sm">
+    <div className="lg:h-screen bg-slate-50/50 lg:overflow-hidden min-h-screen custom-scrollbar overflow-x-hidden">
+      <div className="max-w-2xl lg:max-w-full mx-auto lg:h-full bg-white flex flex-col border-x border-slate-100 shadow-sm">
         {/* Header - Hidden on Desktop */}
         <div 
-          className="p-4 border-b border-white/10 rounded-b-[40px] shadow-xl lg:hidden"
+          className="p-4 border-b border-white/10 rounded-b-[40px] shadow-xl z-20 lg:hidden"
           style={{ 
             background: `linear-gradient(135deg, ${primaryColor}, color-mix(in srgb, ${primaryColor}, black 20%))`,
           }}
@@ -206,43 +213,45 @@ const GantiBaju: React.FC = () => {
                 <Shirt size={16} />
               </div>
               <div className="flex flex-col">
-                <h1 className="text-base font-black text-white tracking-tight leading-none mb-0.5">GANTI BAJU AI</h1>
+                <h1 className="text-base font-black text-white tracking-tight leading-none mb-0.5 uppercase">GANTI BAJU AI</h1>
                 <p className="text-[7px] font-bold uppercase tracking-[0.3em] leading-none text-white/60">Neural Outfit Swap Engine</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="p-4 lg:p-6 lg:flex-1 lg:overflow-hidden">
-          <div className="lg:grid lg:grid-cols-12 lg:gap-6 lg:h-full lg:overflow-hidden">
+        <div className="p-4 lg:p-4 lg:flex-1 lg:overflow-hidden overflow-y-auto">
+          <div className="lg:grid lg:grid-cols-12 lg:gap-4 lg:h-full lg:overflow-hidden flex flex-col">
             {/* Column 1: Model & Mode */}
-            <div className="lg:col-span-3 space-y-6 lg:h-full lg:overflow-y-auto lg:pr-4 custom-scrollbar">
+            <div className="lg:col-span-3 flex flex-col gap-4 lg:h-full lg:overflow-hidden lg:pr-4 lg:border-r lg:border-slate-200">
               {/* Model Upload */}
-              <div className="space-y-3">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <div className="flex-1 flex flex-col min-h-0">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
                   <User size={14} className="text-slate-300" /> 1. Foto Model
                 </label>
-                <ImageUploader
-                  label="Pilih Foto Model"
-                  image={originalModel}
-                  onImageSelect={handleModelUpload}
-                  onClear={() => { setOriginalModel(null); }}
-                  aspectRatio="9-16"
-                  labelInside
-                />
+                <div className="lg:flex-1 min-h-0">
+                  <ImageUploader
+                    label="Pilih Foto Model"
+                    image={originalModel}
+                    onImageSelect={handleModelUpload}
+                    onClear={() => { setOriginalModel(null); setBeforeImage(null); }}
+                    aspectRatio="9-16"
+                    labelInside
+                  />
+                </div>
               </div>
 
               {/* Mode Selection */}
-              <div className="space-y-3">
+              <div className="shrink-0 space-y-2">
                 <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                   <Layers size={14} className="text-slate-300" /> 2. Mode Pakaian
                 </label>
-                <div className="grid grid-cols-1 gap-2 p-1 bg-slate-100 rounded-2xl">
+                <div className="grid grid-cols-1 gap-1.5 p-1.5 bg-slate-100 rounded-2xl">
                   {(['PARTS', 'FULL_SET', 'PROMPT'] as const).map((m) => (
                     <button
                       key={m}
                       onClick={() => setMode(m)}
-                      className={`py-2 rounded-xl text-[10px] font-black uppercase transition-all ${mode === m ? 'bg-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                      className={`py-3 lg:py-1.5 rounded-xl text-[11px] lg:text-[9px] font-black uppercase transition-all ${mode === m ? 'bg-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                       style={{ color: mode === m ? primaryColor : undefined }}
                     >
                       {m === 'FULL_SET' ? 'Satu Set' : m === 'PARTS' ? 'Atasan/Bawahan' : 'Prompt AI'}
@@ -252,9 +261,8 @@ const GantiBaju: React.FC = () => {
               </div>
             </div>
 
-            {/* Column 2: Outfit & Aspect Ratio */}
-            <div className="lg:col-span-3 space-y-6 lg:h-full lg:overflow-y-auto lg:pr-4 custom-scrollbar pt-6 lg:pt-0">
-              {/* Outfit Uploads */}
+            {/* Column 2: Outfit Selection */}
+            <div className="lg:col-span-3 flex flex-col gap-4 lg:h-full lg:overflow-hidden pt-6 lg:pt-0 lg:px-4 lg:border-r lg:border-slate-200">
               <AnimatePresence mode="wait">
                 {mode === 'FULL_SET' ? (
                   <motion.div
@@ -262,19 +270,53 @@ const GantiBaju: React.FC = () => {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
-                    className="space-y-3"
+                    className="flex-1 flex flex-col min-h-0"
                   >
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
                       <Shirt size={14} className="text-slate-300" /> 3. Foto Pakaian (Full Set)
                     </label>
-                    <ImageUploader
-                      label="Pilih Pakaian"
-                      image={fullSetAsset}
-                      onImageSelect={setFullSetAsset}
-                      onClear={() => setFullSetAsset(null)}
-                      aspectRatio="square"
-                      labelInside
-                    />
+                    <div className="flex-1 min-h-0">
+                      <ImageUploader
+                        label="Pilih Pakaian"
+                        image={fullSetAsset}
+                        onImageSelect={setFullSetAsset}
+                        onClear={() => setFullSetAsset(null)}
+                        aspectRatio="square"
+                        labelInside
+                      />
+                    </div>
+
+                    <div className="shrink-0 mt-2">
+                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                        <Sparkles size={14} className="text-slate-300" /> 4. Detail Tambahan (Opsional)
+                      </label>
+                      <div className="relative">
+                        <textarea
+                          value={customPrompt}
+                          onChange={(e) => setCustomPrompt(e.target.value)}
+                          placeholder="Mendetailkan hal yang dianggap perlu..."
+                          className="w-full min-h-[80px] p-4 bg-slate-50 border-2 border-slate-200 rounded-3xl text-xs font-medium focus:border-slate-400 focus:outline-none resize-none transition-all shadow-inner"
+                        />
+                        <div className="absolute bottom-3 right-3 flex gap-1.5">
+                          <button
+                            onClick={() => setCustomPrompt('')}
+                            className="p-1.5 bg-white shadow-sm border border-slate-100 rounded-lg text-slate-400 hover:text-rose-500 transition-all"
+                            style={{ opacity: customPrompt ? 1 : 0 }}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                          <button
+                            onClick={handleEnhancePrompt}
+                            disabled={!customPrompt.trim() || processing.isProcessing}
+                            className="p-1.5 bg-white shadow-sm border border-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-all disabled:opacity-50"
+                            title="Sempurnakan dengan AI"
+                            style={{ opacity: customPrompt ? 1 : 0 }}
+                          >
+                            <Sparkles size={12} style={{ color: customPrompt.trim() ? primaryColor : undefined }} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </motion.div>
                 ) : mode === 'PARTS' ? (
                   <motion.div
@@ -282,33 +324,69 @@ const GantiBaju: React.FC = () => {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
-                    className="space-y-6"
+                    className="flex-1 flex flex-col gap-4 min-h-0"
                   >
-                    <div className="space-y-3">
-                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <div className="flex-1 flex flex-col min-h-0">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
                         <Shirt size={14} className="text-slate-300" /> 3. Foto Atasan
                       </label>
-                      <ImageUploader
-                        label="Pilih Atasan"
-                        image={topAsset}
-                        onImageSelect={setTopAsset}
-                        onClear={() => setTopAsset(null)}
-                        aspectRatio="square"
-                        labelInside
-                      />
+                      <div className="flex-1 min-h-0">
+                        <ImageUploader
+                          label="Pilih Atasan"
+                          image={topAsset}
+                          onImageSelect={setTopAsset}
+                          onClear={() => setTopAsset(null)}
+                          aspectRatio="square"
+                          labelInside
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-3">
-                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <div className="flex-1 flex flex-col min-h-0">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
                         <Shirt size={14} className="text-slate-300" /> 4. Foto Bawahan
                       </label>
-                      <ImageUploader
-                        label="Pilih Bawahan"
-                        image={bottomAsset}
-                        onImageSelect={setBottomAsset}
-                        onClear={() => setBottomAsset(null)}
-                        aspectRatio="square"
-                        labelInside
-                      />
+                      <div className="flex-1 min-h-0">
+                        <ImageUploader
+                          label="Pilih Bawahan"
+                          image={bottomAsset}
+                          onImageSelect={setBottomAsset}
+                          onClear={() => setBottomAsset(null)}
+                          aspectRatio="square"
+                          labelInside
+                        />
+                      </div>
+                    </div>
+
+                    <div className="shrink-0">
+                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                        <Sparkles size={14} className="text-slate-300" /> 5. Detail Tambahan (Opsional)
+                      </label>
+                      <div className="relative">
+                        <textarea
+                          value={customPrompt}
+                          onChange={(e) => setCustomPrompt(e.target.value)}
+                          placeholder="Mendetailkan hal yang dianggap perlu..."
+                          className="w-full min-h-[80px] p-4 bg-slate-50 border-2 border-slate-200 rounded-3xl text-xs font-medium focus:border-slate-400 focus:outline-none resize-none transition-all shadow-inner"
+                        />
+                         <div className="absolute bottom-3 right-3 flex gap-1.5">
+                          <button
+                            onClick={() => setCustomPrompt('')}
+                            className="p-1.5 bg-white shadow-sm border border-slate-100 rounded-lg text-slate-400 hover:text-rose-500 transition-all"
+                            style={{ opacity: customPrompt ? 1 : 0 }}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                          <button
+                            onClick={handleEnhancePrompt}
+                            disabled={!customPrompt.trim() || processing.isProcessing}
+                            className="p-1.5 bg-white shadow-sm border border-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-all disabled:opacity-50"
+                            title="Sempurnakan dengan AI"
+                            style={{ opacity: customPrompt ? 1 : 0 }}
+                          >
+                            <Sparkles size={12} style={{ color: customPrompt.trim() ? primaryColor : undefined }} />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </motion.div>
                 ) : (
@@ -317,55 +395,73 @@ const GantiBaju: React.FC = () => {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
-                    className="space-y-3"
+                    className="flex-1 flex flex-col min-h-0"
                   >
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
                       <Sparkles size={14} className="text-slate-300" /> 3. Keterangan Baju Kustom
                     </label>
-                      <div className="relative">
-                        <textarea
-                          value={customPrompt}
-                          onChange={(e) => setCustomPrompt(e.target.value)}
-                          placeholder="Contoh: Gaun pesta warna merah dengan motif bunga emas..."
-                          className="w-full h-32 p-4 bg-slate-50 border-2 border-slate-100 rounded-3xl text-xs font-medium focus:border-slate-200 focus:outline-none resize-none transition-all"
-                        />
-                        <div className="absolute bottom-4 right-4 flex gap-2">
-                          <button
-                            onClick={() => setCustomPrompt('')}
-                            disabled={!customPrompt.trim() || processing.isProcessing}
-                            className="p-2 bg-white shadow-lg border border-slate-100 rounded-xl text-slate-400 hover:text-rose-500 transition-all disabled:opacity-50"
-                            title="Hapus Prompt"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                          <button
-                            onClick={handleEnhancePrompt}
-                            disabled={!customPrompt.trim() || processing.isProcessing}
-                            className="p-2 bg-white shadow-lg border border-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all disabled:opacity-50"
-                            title="Sempurnakan dengan AI"
-                          >
-                            <Sparkles size={16} style={{ color: customPrompt.trim() ? primaryColor : undefined }} />
-                          </button>
-                        </div>
+                    <div className="relative flex-1">
+                      <textarea
+                        value={customPrompt}
+                        onChange={(e) => setCustomPrompt(e.target.value)}
+                        placeholder="Contoh: Gaun pesta warna merah dengan motif bunga emas..."
+                        className="w-full min-h-[450px] lg:min-h-[250px] p-6 bg-slate-50 border-2 border-slate-200 rounded-[32px] text-base lg:text-sm font-medium focus:border-slate-400 focus:outline-none resize-none transition-all shadow-inner"
+                      />
+                      <div className="absolute bottom-4 right-4 flex gap-2">
+                        <button
+                          onClick={() => setCustomPrompt('')}
+                          disabled={!customPrompt.trim() || processing.isProcessing}
+                          className="p-2 bg-white shadow-lg border border-slate-100 rounded-xl text-slate-400 hover:text-rose-500 transition-all disabled:opacity-50"
+                          title="Hapus Prompt"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                        <button
+                          onClick={handleEnhancePrompt}
+                          disabled={!customPrompt.trim() || processing.isProcessing}
+                          className="p-2 bg-white shadow-lg border border-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all disabled:opacity-50"
+                          title="Sempurnakan dengan AI"
+                        >
+                          <Sparkles size={16} style={{ color: customPrompt.trim() ? primaryColor : undefined }} />
+                        </button>
                       </div>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              {/* Aspect Ratio Selection */}
-              <div className="space-y-3">
+              {/* Mobile Generate Button */}
+              <div className="lg:hidden pt-4">
+                <button 
+                  onClick={handleProcessFitting}
+                  disabled={processing.isProcessing || !originalModel || (mode === 'FULL_SET' ? !fullSetAsset : mode === 'PARTS' ? (!topAsset && !bottomAsset) : !customPrompt.trim())}
+                  className="w-full py-5 rounded-3xl text-white font-black uppercase tracking-[0.2em] text-sm shadow-xl transition-all active:scale-95 disabled:opacity-30 flex items-center justify-center gap-3"
+                  style={{ 
+                    backgroundColor: (processing.isProcessing || !originalModel || (mode === 'FULL_SET' ? !fullSetAsset : mode === 'PARTS' ? (!topAsset && !bottomAsset) : !customPrompt.trim())) ? '#cbd5e1' : primaryColor 
+                  }}
+                >
+                  HASILKAN
+                </button>
+              </div>
+            </div>
+
+            {/* Column 3: Result Section */}
+            <div className="lg:col-span-6 flex flex-col gap-4 lg:h-full lg:overflow-hidden pt-8 lg:pt-0 lg:pl-4">
+              <div className="flex items-center justify-between shrink-0">
                 <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <ImageIcon size={14} className="text-slate-300" /> 5. Pilih Aspek Rasio
+                  <ImageIcon size={14} className="text-slate-300" /> Rasio
                 </label>
-                <div className="grid grid-cols-5 gap-2">
+                
+                {/* Aspect Ratio Selection */}
+                <div className="flex-1 flex items-center gap-2 lg:gap-1 overflow-x-auto no-scrollbar justify-end ml-4">
                   {ratios.map((r) => (
                     <button
                       key={r.value}
                       onClick={() => setAspectRatio(r.value)}
-                      className={`flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all duration-300 aspect-square ${
+                      className={`px-3 py-1.5 lg:px-2 lg:py-1 rounded-lg border transition-all text-[10px] lg:text-[8px] font-black shrink-0 ${
                         aspectRatio === r.value 
-                          ? 'scale-105' 
-                          : 'border-slate-100 bg-slate-50/50 text-slate-400 hover:border-slate-200 hover:bg-white'
+                          ? 'shadow-sm' 
+                          : 'border-slate-100 bg-slate-50/50 text-slate-400 hover:border-slate-200'
                       }`}
                       style={{
                         backgroundColor: aspectRatio === r.value ? primaryColor : undefined,
@@ -373,192 +469,175 @@ const GantiBaju: React.FC = () => {
                         borderColor: aspectRatio === r.value ? primaryColor : undefined,
                       }}
                     >
-                      <span className="text-[8px] font-black">{r.label}</span>
+                      {r.label}
                     </button>
                   ))}
                 </div>
               </div>
-
-              <div className="">
-                <button
-                  onClick={handleProcessFitting}
-                  disabled={processing.isProcessing || !originalModel || (mode === 'FULL_SET' ? !fullSetAsset : mode === 'PARTS' ? (!topAsset && !bottomAsset) : !customPrompt.trim())}
-                  className="w-full disabled:bg-slate-300 text-white py-4 rounded-[24px] font-black uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center group relative overflow-hidden"
+              
+              <div className="lg:flex-1 flex items-center justify-center min-h-0 w-full overflow-hidden">
+                <div 
+                  className={`bg-slate-50 border-2 border-dashed rounded-[24px] flex items-center justify-center overflow-hidden relative group transition-all duration-500 shadow-inner ${
+                    aspectRatio === '1:1' ? 'aspect-square' :
+                    aspectRatio === '3:4' ? 'aspect-[3/4]' :
+                    aspectRatio === '4:3' ? 'aspect-[4/3]' :
+                    aspectRatio === '9:16' ? 'aspect-[9/16]' :
+                    'aspect-[16/9]'
+                  }`}
                   style={{ 
-                    backgroundColor: processing.isProcessing || !originalModel || (mode === 'FULL_SET' ? !fullSetAsset : mode === 'PARTS' ? (!topAsset && !bottomAsset) : !customPrompt.trim()) ? undefined : primaryColor,
+                    borderColor: resultImage ? 'white' : `${primaryColor}40`,
+                    backgroundColor: resultImage ? 'white' : undefined,
+                    width: '100%',
+                    height: 'auto',
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    aspectRatio: aspectRatio.replace(':', '/')
                   }}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
-                  {processing.isProcessing ? (
-                    <span className="relative z-10 text-xs">SEDANG PROSES...</span>
-                  ) : (
-                    <span className="text-sm relative z-10">GANTI PAKAIAN</span>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Column 3: Result Section */}
-            <div className="lg:col-span-6 space-y-4 lg:pt-0 pt-8 border-t lg:border-t-0 border-slate-100 lg:h-full lg:flex lg:flex-col lg:justify-between lg:overflow-hidden">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <ImageIcon size={14} className="text-slate-300" /> Hasil Fitting
-                </label>
-              </div>
-              
-              <div 
-                className={`w-full max-w-[280px] lg:max-w-full lg:h-full lg:max-h-[calc(100vh-200px)] lg:w-auto mx-auto bg-white border-2 border-dashed rounded-[32px] flex items-center justify-center overflow-hidden relative group transition-all duration-500 ${
-                  aspectRatio === '1:1' ? 'aspect-square' :
-                  aspectRatio === '3:4' ? 'aspect-[3/4]' :
-                  aspectRatio === '4:3' ? 'aspect-[4/3]' :
-                  aspectRatio === '9:16' ? 'aspect-[9/16]' :
-                  'aspect-[16/9]'
-                }`}
-                style={{ 
-                  borderColor: resultImage ? 'white' : `${primaryColor}40`,
-                  backgroundColor: resultImage ? 'white' : undefined
-                }}
-              >
-                <AnimatePresence mode="wait">
-                  {processing.isProcessing ? (
-                    <motion.div
-                      key="loading"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="absolute inset-0 flex flex-col items-center justify-center z-30"
-                    >
-                      <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-16 h-16 object-contain animate-spin" alt="Logo" />
-                    </motion.div>
-                  ) : resultImage ? (
-                    <motion.div
-                      key="result"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="w-full h-full relative select-none touch-none"
-                    >
-                      <img src={originalModel!} className="absolute inset-0 w-full h-full object-cover" alt="Original" />
-                      <div className="absolute inset-0 w-full h-full pointer-events-none" style={{ clipPath: `inset(0 0 0 ${sliderPos}%)` }}>
-                        <img src={resultImage} className="absolute inset-0 w-full h-full object-cover" alt="Result" />
-                      </div>
-                      <input 
-                        type="range" 
-                        min="0" 
-                        max="100" 
-                        value={sliderPos} 
-                        onChange={(e) => setSliderPos(Number(e.target.value))} 
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20" 
-                      />
-                      <div className="absolute top-0 bottom-0 w-[2px] bg-white z-10 pointer-events-none" style={{ left: `${sliderPos}%` }}>
+                  <AnimatePresence mode="wait">
+                    {processing.isProcessing ? (
+                      <motion.div
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-white/80 backdrop-blur-sm"
+                      >
+                        <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-16 h-16 object-contain animate-spin" alt="Logo" />
+                        <p className="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">{processing.progress}</p>
+                      </motion.div>
+                    ) : resultImage ? (
+                      <motion.div
+                        key="result"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="w-full h-full relative"
+                      >
+                        {/* BEFORE/AFTER SLIDER */}
+                        <div className="absolute inset-0">
+                          <img src={resultImage} alt="Result" className="w-full h-full object-cover" />
+                        </div>
                         <div 
-                          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-2xl flex items-center justify-center border-2 transition-transform group-hover:scale-110"
-                          style={{ borderColor: primaryColor }}
+                          className="absolute inset-0 overflow-hidden"
+                          style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
                         >
-                          <div className="flex gap-0.5">
-                            <div className="w-0.5 h-3 rounded-full" style={{ backgroundColor: primaryColor }} />
-                            <div className="w-0.5 h-3 rounded-full" style={{ backgroundColor: primaryColor }} />
+                          <img src={beforeImage!} alt="Original" className="w-full h-full object-cover" />
+                        </div>
+                        
+                        {/* SLIDER HANDLE */}
+                        <div 
+                          className="absolute inset-y-0 w-1 bg-white shadow-[0_0_10px_rgba(0,0,0,0.3)] cursor-ew-resize z-10"
+                          style={{ left: `${sliderPos}%` }}
+                        >
+                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full shadow-xl flex items-center justify-center border-4 border-slate-100">
+                            <div className="flex gap-0.5">
+                              <div className="w-0.5 h-3 bg-slate-300 rounded-full" />
+                              <div className="w-0.5 h-3 bg-slate-300 rounded-full" />
+                            </div>
                           </div>
                         </div>
+                        
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="100" 
+                          value={sliderPos} 
+                          onChange={(e) => setSliderPos(parseInt(e.target.value))}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20"
+                        />
+
+                        {/* LABELS */}
+                        <div className="absolute bottom-6 left-6 px-3 py-1 bg-black/50 backdrop-blur-md rounded-full text-[10px] font-black text-white uppercase tracking-widest z-30">
+                          Original
+                        </div>
+                        <div className="absolute bottom-6 right-6 px-3 py-1 bg-white/50 backdrop-blur-md rounded-full text-[10px] font-black text-slate-900 uppercase tracking-widest z-30">
+                          AI Fitting
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-12 text-center opacity-40">
+                        <div className="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center mb-4">
+                          <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-12 h-12 object-contain grayscale opacity-50" alt="Logo" />
+                        </div>
+                        <p className="text-xs font-black uppercase tracking-widest">Belum Ada Hasil</p>
                       </div>
-                      <div className="absolute bottom-4 left-4 px-2 py-0.5 bg-black/40 backdrop-blur-md rounded-full text-[6px] font-black text-white uppercase tracking-widest pointer-events-none">Before</div>
-                      <div className="absolute bottom-4 right-4 px-2 py-0.5 bg-white/40 backdrop-blur-md rounded-full text-[6px] font-black text-black uppercase tracking-widest pointer-events-none">After</div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+
+                {/* Action Buttons */}
+                <div className="grid grid-cols-5 lg:grid-cols-7 gap-2 lg:gap-3 w-full mx-auto">
+                  <button 
+                    onClick={handleProcessFitting}
+                    disabled={processing.isProcessing || !originalModel || (mode === 'FULL_SET' ? !fullSetAsset : mode === 'PARTS' ? (!topAsset && !bottomAsset) : !customPrompt.trim())}
+                    title="Generate"
+                    className="hidden lg:flex order-5 lg:order-first col-span-1 lg:col-span-2 py-4 rounded-2xl border-2 text-white items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg disabled:opacity-30"
+                    style={{ 
+                      backgroundColor: (processing.isProcessing || !originalModel || (mode === 'FULL_SET' ? !fullSetAsset : mode === 'PARTS' ? (!topAsset && !bottomAsset) : !customPrompt.trim())) ? '#cbd5e1' : primaryColor, 
+                      borderColor: (processing.isProcessing || !originalModel || (mode === 'FULL_SET' ? !fullSetAsset : mode === 'PARTS' ? (!topAsset && !bottomAsset) : !customPrompt.trim())) ? '#cbd5e1' : primaryColor 
+                    }}
+                  >
+                    <span className="font-black uppercase tracking-widest text-[10px]">HASILKAN</span>
+                  </button>
+
+                  <button 
+                    onClick={() => setShowPreview(true)}
+                    disabled={processing.isProcessing || !resultImage}
+                    title="Preview"
+                    className="order-1 lg:order-2 py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
+                  >
+                    <Eye size={20} />
+                  </button>
+                  <button 
+                    onClick={() => setIsCropping(true)}
+                    disabled={processing.isProcessing || !resultImage}
+                    title="Crop"
+                    className="order-2 lg:order-3 py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
+                  >
+                    <Scissors size={20} />
+                  </button>
+                  <button 
+                    onClick={handleSharpen}
+                    disabled={processing.isProcessing || !resultImage}
+                    title="Sharpen"
+                    className="order-3 lg:order-4 py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
+                  >
+                    <Zap size={20} />
+                  </button>
+                  <button 
+                    onClick={handleReset}
+                    disabled={processing.isProcessing || !resultImage || resultImage === initialResultImage}
+                    title="Reset"
+                    className="order-4 lg:order-5 py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
+                  >
+                    <Recycle size={20} />
+                  </button>
+                  <button 
+                    onClick={handleDownload}
+                    disabled={processing.isProcessing || !resultImage}
+                    title="Download"
+                    className="order-6 lg:order-6 py-4 rounded-2xl border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:border-slate-200 hover:text-slate-900 transition-all disabled:opacity-30 bg-white shadow-sm"
+                  >
+                    <Download size={20} />
+                  </button>
+                </div>
+
+                {/* Error Message */}
+                <AnimatePresence>
+                  {processing.error && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 20 }}
+                      className="bg-rose-50 border-2 border-rose-100 p-5 rounded-2xl text-rose-600 text-[10px] font-black text-center uppercase tracking-widest"
+                    >
+                      {processing.error}
                     </motion.div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center p-12 text-center opacity-40">
-                      <div className="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center mb-4">
-                        <img src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" className="w-12 h-12 object-contain grayscale opacity-50" alt="Logo" />
-                      </div>
-                      <p className="text-xs font-black uppercase tracking-widest">Belum Ada Hasil</p>
-                    </div>
                   )}
                 </AnimatePresence>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="grid grid-cols-5 gap-2 w-full max-w-[360px] lg:max-w-full mx-auto mt-4">
-                <button
-                  onClick={() => setShowPreview(true)}
-                  disabled={!resultImage || processing.isProcessing}
-                  className={`flex items-center justify-center py-4 bg-white border-2 rounded-2xl transition-all ${
-                    !resultImage || processing.isProcessing 
-                      ? 'opacity-30 border-slate-50 cursor-not-allowed' 
-                      : 'border-slate-100 hover:border-slate-200'
-                  }`}
-                  style={{ color: primaryColor }}
-                  title="Preview"
-                >
-                  <Eye size={20} />
-                </button>
-                <button
-                  onClick={() => setIsCropping(true)}
-                  disabled={!resultImage || processing.isProcessing}
-                  className={`flex items-center justify-center py-4 bg-white border-2 rounded-2xl transition-all ${
-                    !resultImage || processing.isProcessing 
-                      ? 'opacity-30 border-slate-50 cursor-not-allowed' 
-                      : 'border-slate-100 hover:border-slate-200'
-                  }`}
-                  style={{ color: primaryColor }}
-                  title="Crop"
-                >
-                  <Scissors size={20} />
-                </button>
-                <button
-                  onClick={handleSharpen}
-                  disabled={!resultImage || processing.isProcessing}
-                  className={`flex items-center justify-center py-4 bg-white border-2 rounded-2xl transition-all ${
-                    !resultImage || processing.isProcessing 
-                      ? 'opacity-30 border-slate-50 cursor-not-allowed' 
-                      : 'border-slate-100 hover:border-slate-200'
-                  }`}
-                  style={{ color: primaryColor }}
-                  title="Tajamkan"
-                >
-                  <Zap size={20} />
-                </button>
-                <button
-                  onClick={handleReset}
-                  disabled={!resultImage || processing.isProcessing || resultImage === initialResultImage}
-                  className={`flex items-center justify-center py-4 bg-white border-2 rounded-2xl transition-all ${
-                    !resultImage || processing.isProcessing || resultImage === initialResultImage
-                      ? 'opacity-30 border-slate-50 cursor-not-allowed' 
-                      : 'border-slate-100 hover:border-slate-200'
-                  }`}
-                  style={{ color: primaryColor }}
-                  title="Reset"
-                >
-                  <Recycle size={20} />
-                </button>
-                <button
-                  onClick={handleDownload}
-                  disabled={!resultImage || processing.isProcessing}
-                  className={`flex items-center justify-center py-4 text-white rounded-2xl transition-all ${
-                    !resultImage || processing.isProcessing 
-                      ? 'bg-slate-300 opacity-50 cursor-not-allowed' 
-                      : ''
-                  }`}
-                  style={{ backgroundColor: !resultImage || processing.isProcessing ? undefined : primaryColor }}
-                  title="Download"
-                >
-                  <Download size={20} />
-                </button>
-              </div>
             </div>
           </div>
-        </div>
-
-          {/* Error Message */}
-          <AnimatePresence>
-            {processing.error && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                className="bg-rose-50 border-2 border-rose-100 p-5 rounded-2xl text-rose-600 text-[10px] font-black text-center uppercase tracking-widest"
-              >
-                {processing.error}
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
       {/* Full Screen Preview Modal */}
@@ -665,7 +744,8 @@ const GantiBaju: React.FC = () => {
         )}
       </AnimatePresence>
     </div>
-  );
+  </div>
+);
 };
 
 export default GantiBaju;

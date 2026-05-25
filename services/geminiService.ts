@@ -2,8 +2,83 @@
 import { GoogleGenAI, GenerateContentResponse, Modality, Type } from "@google/genai";
 import { PasFotoConfig, KidsModelConfig, AnimeConfig, FusionConfig, GabungConfig, HaluConfig, MockUpConfig, ExpandConfig, GuberProdukConfig, WeddingConfig, SceneConfig, FotoFashionConfig } from "../types";
 
-// Inisialisasi AI selalu mengambil API_KEY terbaru dari environment
-const getAI = () => new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Inisialisasi AI dengan dukungan rotasi multiple API Keys untuk menghindari rate limit
+let blacklistedKeys: Set<string> = new Set();
+
+// Fungsi internal untuk mengambil kunci dan instance
+const getAIInternal = () => {
+  const hardcodedKeys = [
+    "AIzaSyA4773itrisKLmwTPvlE39gZJObqpq-A3Y",
+    "AIzaSyAgmiGa30Iwrx0MafwzYz7Vh0XxyaLfPtk",
+    "AIzaSyAjBj_lsDMoxk6h330-Iksy1U_-XlpEvpQ"
+  ];
+  
+  const keys: string[] = [...hardcodedKeys];
+  const isValidFormat = (k: string) => k && k.length > 20 && k.startsWith("AIza");
+
+  if (process.env.GEMINI_API_KEY) {
+    process.env.GEMINI_API_KEY.split(",").forEach(k => {
+      const trimmed = k.trim();
+      if (isValidFormat(trimmed)) keys.push(trimmed);
+    });
+  }
+  
+  if (process.env.MY_EXTRA_KEYS) {
+    process.env.MY_EXTRA_KEYS.split(",").forEach(k => {
+      const trimmed = k.trim();
+      if (isValidFormat(trimmed)) keys.push(trimmed);
+    });
+  }
+  
+  for (let i = 1; i <= 10; i++) {
+    const key = (process.env as any)[`MY_EXTRA_KEYS_${i}`];
+    if (key) {
+      const trimmed = key.trim();
+      if (isValidFormat(trimmed)) keys.push(trimmed);
+    }
+  }
+  
+  const uniqueKeys = Array.from(new Set(keys));
+  let availableKeys = uniqueKeys.filter(k => !blacklistedKeys.has(k));
+  
+  if (availableKeys.length === 0) {
+    blacklistedKeys.clear();
+    availableKeys = uniqueKeys;
+  }
+  
+  const selectedKey = availableKeys[Math.floor(Math.random() * availableKeys.length)];
+  return { genAI: new GoogleGenAI({ apiKey: selectedKey }), key: selectedKey };
+};
+
+// Export getAI yang lama agar tidak merusak file modular lain
+export const getAI = () => {
+  const { genAI } = getAIInternal();
+  return genAI;
+};
+
+// Wrapper untuk menjalankan fungsi AI dengan retry otomatis jika kena limit
+export const runWithRetry = async (operation: (ai: any) => Promise<any>, maxRetries = 3) => {
+  let lastError: any;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    const { genAI, key } = getAIInternal();
+    try {
+      return await operation(genAI);
+    } catch (err: any) {
+      lastError = err;
+      const msg = err?.message || "";
+      
+      if (msg.includes("429") || msg.includes("quota")) {
+        console.warn(`Key ${key.substring(0, 6)}... kena limit. Mencoba kunci lain (${i + 1}/${maxRetries})`);
+        blacklistedKeys.add(key);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        continue;
+      }
+      throw err;
+    }
+  }
+  return handleApiError(lastError);
+};
 
 export const cleanBase64 = (base64: string) => {
   return base64.split(',')[1] || base64;
@@ -29,7 +104,7 @@ export const extractImageFromResponse = (response: GenerateContentResponse) => {
 };
 
 // Fungsi pembantu untuk menghasilkan seed acak agar tidak limit
-const getRandomSeed = () => Math.floor(Math.random() * 1000000);
+export const getRandomSeed = () => Math.floor(Math.random() * 1000000);
 
 const handleApiError = (err: any) => {
   console.error("API Call Error:", err);
@@ -45,8 +120,7 @@ const handleApiError = (err: any) => {
 };
 
 export const magicEraser = async (image: string, mask: string) => {
-  try {
-    const ai = getAI();
+  return runWithRetry(async (ai) => {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: [{ 
@@ -62,14 +136,11 @@ export const magicEraser = async (image: string, mask: string) => {
       }
     });
     return extractImageFromResponse(response);
-  } catch (err: any) {
-    return handleApiError(err);
-  }
+  });
 };
 
 export const generateSpeech = async (text: string, voiceName: string, isMultiSpeaker: boolean = false, speakers?: {name: string, voice: string}[]) => {
-  try {
-    const ai = getAI();
+  return runWithRetry(async (ai) => {
     let config: any = { responseModalities: [Modality.AUDIO] };
     if (isMultiSpeaker && speakers && speakers.length === 2) {
       config.speechConfig = {
@@ -91,14 +162,11 @@ export const generateSpeech = async (text: string, voiceName: string, isMultiSpe
     const data = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
     if (!data) throw new Error("Gagal menghasilkan suara.");
     return data;
-  } catch (err: any) {
-    return handleApiError(err);
-  }
+  });
 };
 
 export const generateSellingNarration = async (image: string) => {
-  try {
-    const ai = getAI();
+  return runWithRetry(async (ai) => {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: [{ 
@@ -109,14 +177,11 @@ export const generateSellingNarration = async (image: string) => {
       }],
     });
     return response.text?.trim() || "";
-  } catch (err: any) {
-    return handleApiError(err);
-  }
+  });
 };
 
 export const extractTextOCR = async (image: string) => {
-  try {
-    const ai = getAI();
+  return runWithRetry(async (ai) => {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: [{
@@ -127,14 +192,11 @@ export const extractTextOCR = async (image: string) => {
       }]
     });
     return response.text?.trim() || "";
-  } catch (err: any) {
-    return handleApiError(err);
-  }
+  });
 };
 
 export const generateTypographyPoster = async (text: string, bgStyle: string, typoStyle: string) => {
-  try {
-    const ai = getAI();
+  return runWithRetry(async (ai) => {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: [{ 
@@ -148,9 +210,7 @@ export const generateTypographyPoster = async (text: string, bgStyle: string, ty
       }
     });
     return extractImageFromResponse(response);
-  } catch (err: any) {
-    return handleApiError(err);
-  }
+  });
 };
 
 export const applyHeadwear = async (image: string, desc: string, customAsset: string | null = null) => {

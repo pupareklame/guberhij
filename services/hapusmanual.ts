@@ -1,9 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
-import { cleanBase64, extractImageFromResponse } from "./geminiService";
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+import { cleanBase64, extractImageFromResponse, getAI } from "./geminiService";
 
 export const magicEraser = async (image: string, mask: string, aspectRatio: string = '1:1') => {
+  const ai = getAI();
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash-image",
     contents: {
@@ -22,6 +21,7 @@ export const magicEraser = async (image: string, mask: string, aspectRatio: stri
 };
 
 export const upscaleImage = async (image: string, ratio: string) => {
+  const ai = getAI();
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash-image",
     contents: {

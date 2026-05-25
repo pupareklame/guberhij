@@ -13,6 +13,7 @@ export const ThemeCustomizerModal: React.FC<ThemeCustomizerModalProps> = ({ isOp
   if (!isOpen) return null;
 
   const primaryPresets = [
+    { name: 'Ungu Gelap', color: '#1a0b2e' },
     { name: 'Toska Gelap', color: '#0f766e' },
     { name: 'Navy', color: '#1e3a8a' },
     { name: 'Hitam', color: '#000000' },
@@ -25,7 +26,7 @@ export const ThemeCustomizerModal: React.FC<ThemeCustomizerModalProps> = ({ isOp
   ];
 
   const handleReset = () => {
-    setPrimaryColor('#0f766e');
+    setPrimaryColor('#1a0b2e');
     setSecondaryColor('#ffffff');
   };
 
