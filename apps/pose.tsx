@@ -274,27 +274,27 @@ const GuberPose: React.FC = () => {
   return (
     <div className="h-screen bg-slate-50/50 overflow-hidden">
       <div className="max-w-2xl lg:max-w-7xl mx-auto h-full bg-white flex flex-col border-x border-slate-100 shadow-sm overflow-hidden">
-        {/* Header - Hidden on Desktop */}
-        <div 
-          className="p-4 border-b border-white/10 rounded-b-[40px] shadow-xl z-20 lg:hidden shrink-0"
-          style={{ 
-            background: `linear-gradient(135deg, ${primaryColor}, color-mix(in srgb, ${primaryColor}, black 20%))`,
-          }}
-        >
-          <div className="flex items-center justify-center">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/20 text-white shadow-inner border border-white/30 backdrop-blur-sm">
-                <Sparkles size={16} />
-              </div>
-              <div className="flex flex-col">
-                <h1 className="text-base font-black text-white tracking-tight leading-none mb-0.5 uppercase">GANTI POSE AI</h1>
-                <p className="text-[7px] font-bold uppercase tracking-[0.3em] leading-none text-white/60">ubah pose sesuai keinginan</p>
+        <div className="p-4 lg:p-6 flex-1 overflow-y-auto lg:overflow-hidden custom-scrollbar">
+          {/* Header - Hidden on Desktop */}
+          <div 
+            className="-mx-4 -mt-4 mb-6 p-4 border-b border-white/10 rounded-b-[40px] shadow-xl z-20 lg:hidden"
+            style={{ 
+              background: `linear-gradient(135deg, ${primaryColor}, color-mix(in srgb, ${primaryColor}, black 20%))`,
+            }}
+          >
+            <div className="flex items-center justify-center">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/20 text-white shadow-inner border border-white/30 backdrop-blur-sm">
+                  <Sparkles size={16} />
+                </div>
+                <div className="flex flex-col">
+                  <h1 className="text-base font-black text-white tracking-tight leading-none mb-0.5 uppercase">GANTI POSE AI</h1>
+                  <p className="text-[7px] font-bold uppercase tracking-[0.3em] leading-none text-white/60">ubah pose sesuai keinginan</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="p-4 lg:p-6 flex-1 overflow-y-auto lg:overflow-hidden custom-scrollbar">
           <div className="lg:grid lg:grid-cols-12 lg:gap-6 lg:h-full lg:overflow-hidden">
             {/* Column 1: Model Utama & Katalog Pose */}
             <div className="lg:col-span-3 space-y-6 lg:h-full lg:overflow-y-auto lg:pr-4 custom-scrollbar">
