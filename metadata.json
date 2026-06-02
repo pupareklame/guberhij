@@ -1,6 +1,6 @@
 {
   "name": "Guber AI FINAL EDIT",
-  "description": "Studio AI Profesional untuk pengolahan foto, katalog fashion, dan mockup produk dengan teknologi Neural Capture.",
+  "description": "Studio AI Profesional untuk pengolahan foto, katalog fashion, dan foto POV produk dengan teknologi Neural Capture.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

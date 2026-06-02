@@ -4,12 +4,12 @@
  * STATUS: PROTECTED-V1
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Box, Download, RefreshCw, Scissors, Check, X, Sparkles, Zap, Maximize, Palette, Image as ImageIcon, Hand, Ruler, Eye, Recycle } from 'lucide-react';
 import Cropper from 'react-easy-crop';
-import { ProcessingState } from '../types';
-import { generateMockup, upscaleImage } from '../services/mockup';
+import { ProcessingState, POVConfig } from '../types';
+import { generatePOV, upscaleImage } from '../services/pov';
 import ImageUploader from '../components/ImageUploader';
 import { useTheme } from '../src/contexts/ThemeContext';
 
@@ -33,7 +33,7 @@ const PRODUCT_SIZES = [
   { id: 'LARGE', name: 'Large / Prominent' },
 ];
 
-const GuberMockup: React.FC = () => {
+const GuberPOV: React.FC = () => {
   const { primaryColor } = useTheme();
   const [productImage, setProductImage] = useState<string | null>(null);
   const [resultImage, setResultImage] = useState<string | null>(null);
@@ -51,9 +51,30 @@ const GuberMockup: React.FC = () => {
   const [handType, setHandType] = useState(HAND_TYPES[0].id);
   const [productSize, setProductSize] = useState(PRODUCT_SIZES[1].id);
   const [colorNuance, setColorNuance] = useState('#ffffff');
+  const [customBgImage, setCustomBgImage] = useState<string | null>(null);
 
-  const [processing, setProcessing] = useState<ProcessingState>({ 
-    isProcessing: false, 
+  useEffect(() => {
+    const handleSetBg = (e: Event) => {
+      const customEvent = e as CustomEvent<{ imageUrl: string }>;
+      if (customEvent.detail && customEvent.detail.imageUrl) {
+        setCustomBgImage(customEvent.detail.imageUrl);
+      }
+    };
+    window.addEventListener('guber-set-custom-bg', handleSetBg);
+    
+    // Also check on mount
+    const savedBg = localStorage.getItem('guber_pov_custom_bg');
+    if (savedBg) {
+      setCustomBgImage(savedBg);
+      localStorage.removeItem('guber_pov_custom_bg');
+    }
+
+    return () => {
+      window.removeEventListener('guber-set-custom-bg', handleSetBg);
+    };
+  }, []);
+
+  const [processing, setProcessing] = useState<ProcessingState>({     isProcessing: false, 
     error: null, 
     progress: '' 
   });
@@ -95,10 +116,10 @@ const GuberMockup: React.FC = () => {
     
     setResultImage(null);
     setOriginalResult(null);
-    setProcessing({ isProcessing: true, error: null, progress: 'AI sedang merakit mockup produk...' });
+    setProcessing({ isProcessing: true, error: null, progress: 'AI sedang merakit foto POV produk...' });
 
     try {
-      const result = await generateMockup(
+      const result = await generatePOV(
         productImage,
         {
           bgPreset: selectedBg,
@@ -106,7 +127,7 @@ const GuberMockup: React.FC = () => {
           productSize: productSize as any,
           colorNuance,
           customSizeCm: 0,
-          customBgImage: null,
+          customBgImage: customBgImage,
           aiBgPrompt: ''
         },
         aspectRatio
@@ -135,7 +156,7 @@ const GuberMockup: React.FC = () => {
     if (!resultImage) return;
     const link = document.createElement('a');
     link.href = resultImage;
-    link.download = `product-mockup-${Date.now()}.png`;
+    link.download = `product-pov-${Date.now()}.png`;
     link.click();
   };
 
@@ -148,6 +169,15 @@ const GuberMockup: React.FC = () => {
       case '16:9': return 16/9;
       default: return 9/16;
     }
+  };
+
+  const getMappedAspectRatio = (ratio: string): '1-1' | '3-4' | '4-3' | '9-16' | '16-9' => {
+    if (ratio === '9:16') return '9-16';
+    if (ratio === '3:4') return '3-4';
+    if (ratio === '1:1') return '1-1';
+    if (ratio === '4:3') return '4-3';
+    if (ratio === '16:9') return '16-9';
+    return '1-1';
   };
 
   return (
@@ -166,7 +196,7 @@ const GuberMockup: React.FC = () => {
                 <Box size={16} />
               </div>
               <div className="flex flex-col">
-                <h1 className="text-base font-black text-white tracking-tight leading-none mb-0.5">PRODUCT MOCKUP AI</h1>
+                <h1 className="text-base font-black text-white tracking-tight leading-none mb-0.5">PRODUCT POV AI</h1>
                 <p className="text-[7px] font-bold uppercase tracking-[0.3em] leading-none text-white/60">Guber Studio Official</p>
               </div>
             </div>
@@ -191,7 +221,7 @@ const GuberMockup: React.FC = () => {
           {/* Background Selection */}
           <div className="space-y-3">
             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <Palette size={14} className="text-slate-300" /> 2. Pilih Background
+              <Palette size={14} className="text-slate-300" /> 2. Pilih Background Preset
             </label>
             <div className="grid grid-cols-5 gap-2">
               {BACKGROUND_STYLES.map(bg => (
@@ -208,6 +238,24 @@ const GuberMockup: React.FC = () => {
                   {selectedBg === bg.id && <Check size={16} className="text-white drop-shadow-md z-10" />}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Custom Background Upload */}
+          <div className="space-y-3">
+            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <ImageIcon size={14} className="text-slate-300" /> 2b. Unggah Latar Belakang Manual (Opsional)
+            </label>
+            <div className="w-full">
+              <ImageUploader
+                label="Buka / Seret Foto Background"
+                image={customBgImage}
+                onImageSelect={setCustomBgImage}
+                onClear={() => setCustomBgImage(null)}
+                aspectRatio={getMappedAspectRatio(aspectRatio)}
+                labelInside
+                description="Menimpa preset warna dangan gambar pilihan Anda sendiri."
+              />
             </div>
           </div>
 
@@ -290,7 +338,7 @@ const GuberMockup: React.FC = () => {
             {processing.isProcessing ? (
               <span className="relative z-10">SEDANG MERAKIT...</span>
             ) : (
-              <span className="text-lg relative z-10">PROSES MOCKUP</span>
+              <span className="text-lg relative z-10">PROSES POV</span>
             )}
           </button>
 
@@ -298,7 +346,7 @@ const GuberMockup: React.FC = () => {
           <div className="space-y-4 pt-4 border-t border-slate-100">
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <Box size={14} className="text-slate-300" /> Hasil Mockup Produk
+                <Box size={14} className="text-slate-300" /> Hasil Foto POV Produk
               </label>
             </div>
             
@@ -460,7 +508,7 @@ const GuberMockup: React.FC = () => {
             className="fixed inset-0 z-[110] bg-black/95 backdrop-blur-xl flex flex-col"
           >
             <div className="flex justify-between items-center p-6 border-b border-white/10">
-              <h2 className="text-white font-black uppercase tracking-widest text-sm">Crop Hasil Mockup</h2>
+              <h2 className="text-white font-black uppercase tracking-widest text-sm">Crop Hasil POV</h2>
               <div className="flex gap-3">
                 <button
                   onClick={() => setIsCropping(false)}
@@ -542,4 +590,4 @@ const GuberMockup: React.FC = () => {
   );
 };
 
-export default GuberMockup;
+export default GuberPOV;

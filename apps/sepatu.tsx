@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Footprints, User, Download, RefreshCw, Sparkles, Image as ImageIcon, Eye, Scissors, X, Check, Layers, Zap, Recycle, Trash2 } from 'lucide-react';
 import Cropper from 'react-easy-crop';
@@ -7,6 +7,53 @@ import { generateSepatu } from '../services/sepatu';
 import { upscaleImage } from '../services/gantibaju';
 import ImageUploader from '../components/ImageUploader';
 import { useTheme } from '../src/contexts/ThemeContext';
+
+const compressBase64ForStorage = (base64: string | null): Promise<string | null> => {
+  return new Promise((resolve) => {
+    if (!base64) {
+      resolve(null);
+      return;
+    }
+    if (!base64.startsWith('data:image/')) {
+      resolve(base64);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      const maxW = 800;
+      const maxH = 800;
+      let width = img.width;
+      let height = img.height;
+      if (width <= maxW && height <= maxH) {
+        resolve(base64);
+        return;
+      }
+      if (width > height) {
+        if (width > maxW) {
+          height = Math.round((height * maxW) / width);
+          width = maxW;
+        }
+      } else {
+        if (height > maxH) {
+          width = Math.round((width * maxH) / height);
+          height = maxH;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      } else {
+        resolve(base64);
+      }
+    };
+    img.onerror = () => resolve(base64);
+    img.src = base64;
+  });
+};
 
 const GuberSepatu: React.FC = () => {
   const { primaryColor } = useTheme();
@@ -20,6 +67,7 @@ const GuberSepatu: React.FC = () => {
   const [sliderPos, setSliderPos] = useState(50);
   const [aspectRatio, setAspectRatio] = useState<'1:1' | '3:4' | '4:3' | '9:16' | '16:9'>('9:16');
   const [showPreview, setShowPreview] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   
   const [config, setConfig] = useState<SepatuConfig>({
     target: 'DEWASA_LAKI',
@@ -32,10 +80,214 @@ const GuberSepatu: React.FC = () => {
 
   const [customEnv, setCustomEnv] = useState('');
 
+  // Load initial session on mount (ignoring server-side mismatch, SPA only)
+  useEffect(() => {
+    try {
+      const savedTab = localStorage.getItem('guber_sepatu_activeTab');
+      if (savedTab) setActiveTab(savedTab as any);
+
+      const savedOrig = localStorage.getItem('guber_sepatu_originalImage');
+      if (savedOrig) setOriginalImage(savedOrig);
+
+      const savedLogo = localStorage.getItem('guber_sepatu_logoImage');
+      if (savedLogo) setLogoImage(savedLogo);
+
+      const savedSole = localStorage.getItem('guber_sepatu_soleMotifImage');
+      if (savedSole) setSoleMotifImage(savedSole);
+
+      const savedResult = localStorage.getItem('guber_sepatu_resultImage');
+      if (savedResult) setResultImage(savedResult);
+
+      const savedInitial = localStorage.getItem('guber_sepatu_initialResultImage');
+      if (savedInitial) setInitialResultImage(savedInitial);
+
+      const savedBefore = localStorage.getItem('guber_sepatu_beforeImage');
+      if (savedBefore) setBeforeImage(savedBefore);
+
+      const savedRatio = localStorage.getItem('guber_sepatu_aspectRatio');
+      if (savedRatio) setAspectRatio(savedRatio as any);
+
+      const savedCustomEnv = localStorage.getItem('guber_sepatu_customEnv');
+      if (savedCustomEnv) setCustomEnv(savedCustomEnv);
+
+      const savedConfig = localStorage.getItem('guber_sepatu_config');
+      if (savedConfig) {
+        setConfig(JSON.parse(savedConfig));
+      }
+    } catch (e) {
+      console.warn("Gagal membaca sesi sepatu dari localStorage", e);
+    }
+  }, []);
+
+  // Sync basic state text/config changes to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('guber_sepatu_activeTab', activeTab);
+    } catch (e) {}
+  }, [activeTab]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('guber_sepatu_aspectRatio', aspectRatio);
+    } catch (e) {}
+  }, [aspectRatio]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('guber_sepatu_customEnv', customEnv);
+    } catch (e) {}
+  }, [customEnv]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('guber_sepatu_config', JSON.stringify(config));
+    } catch (e) {}
+  }, [config]);
+
+  // Sync originalImage
+  useEffect(() => {
+    if (!originalImage) {
+      localStorage.removeItem('guber_sepatu_originalImage');
+      return;
+    }
+    compressBase64ForStorage(originalImage).then(compressed => {
+      if (compressed) {
+        try {
+          localStorage.setItem('guber_sepatu_originalImage', compressed);
+        } catch (e) {
+          console.warn("Storage quota exceeded, could not save originalImage");
+        }
+      }
+    });
+  }, [originalImage]);
+
+  // Sync logoImage
+  useEffect(() => {
+    if (!logoImage) {
+      localStorage.removeItem('guber_sepatu_logoImage');
+      return;
+    }
+    compressBase64ForStorage(logoImage).then(compressed => {
+      if (compressed) {
+        try {
+          localStorage.setItem('guber_sepatu_logoImage', compressed);
+        } catch (e) {
+          console.warn("Storage quota exceeded, could not save logoImage");
+        }
+      }
+    });
+  }, [logoImage]);
+
+  // Sync soleMotifImage
+  useEffect(() => {
+    if (!soleMotifImage) {
+      localStorage.removeItem('guber_sepatu_soleMotifImage');
+      return;
+    }
+    compressBase64ForStorage(soleMotifImage).then(compressed => {
+      if (compressed) {
+        try {
+          localStorage.setItem('guber_sepatu_soleMotifImage', compressed);
+        } catch (e) {
+          console.warn("Storage quota exceeded, could not save soleMotifImage");
+        }
+      }
+    });
+  }, [soleMotifImage]);
+
+  // Sync resultImage
+  useEffect(() => {
+    if (!resultImage) {
+      localStorage.removeItem('guber_sepatu_resultImage');
+      return;
+    }
+    compressBase64ForStorage(resultImage).then(compressed => {
+      if (compressed) {
+        try {
+          localStorage.setItem('guber_sepatu_resultImage', compressed);
+        } catch (e) {
+          console.warn("Storage quota exceeded, could not save resultImage");
+        }
+      }
+    });
+  }, [resultImage]);
+
+  // Sync initialResultImage
+  useEffect(() => {
+    if (!initialResultImage) {
+      localStorage.removeItem('guber_sepatu_initialResultImage');
+      return;
+    }
+    compressBase64ForStorage(initialResultImage).then(compressed => {
+      if (compressed) {
+        try {
+          localStorage.setItem('guber_sepatu_initialResultImage', compressed);
+        } catch (e) {
+          console.warn("Storage quota exceeded, could not save initialResultImage");
+        }
+      }
+    });
+  }, [initialResultImage]);
+
+  // Sync beforeImage
+  useEffect(() => {
+    if (!beforeImage) {
+      localStorage.removeItem('guber_sepatu_beforeImage');
+      return;
+    }
+    compressBase64ForStorage(beforeImage).then(compressed => {
+      if (compressed) {
+        try {
+          localStorage.setItem('guber_sepatu_beforeImage', compressed);
+        } catch (e) {
+          console.warn("Storage quota exceeded, could not save beforeImage");
+        }
+      }
+    });
+  }, [beforeImage]);
+
+  const handleClearAll = () => {
+    if (!showClearConfirm) {
+      setShowClearConfirm(true);
+      setTimeout(() => setShowClearConfirm(false), 3000);
+      return;
+    }
+    
+    setOriginalImage(null);
+    setLogoImage(null);
+    setSoleMotifImage(null);
+    setResultImage(null);
+    setInitialResultImage(null);
+    setBeforeImage(null);
+    setCustomEnv('');
+    setConfig({
+      target: 'DEWASA_LAKI',
+      environment: 'Jalanan Perkotaan yang Estetik (Urban Street)',
+      aspectRatio: '9:16',
+      mode: 'KATALOG',
+      showroomAmbiance: 'DEFAULT',
+      showroomComposition: 'FOLLOW'
+    });
+
+    localStorage.removeItem('guber_sepatu_activeTab');
+    localStorage.removeItem('guber_sepatu_originalImage');
+    localStorage.removeItem('guber_sepatu_logoImage');
+    localStorage.removeItem('guber_sepatu_soleMotifImage');
+    localStorage.removeItem('guber_sepatu_resultImage');
+    localStorage.removeItem('guber_sepatu_initialResultImage');
+    localStorage.removeItem('guber_sepatu_beforeImage');
+    localStorage.removeItem('guber_sepatu_aspectRatio');
+    localStorage.removeItem('guber_sepatu_customEnv');
+    localStorage.removeItem('guber_sepatu_config');
+    
+    setShowClearConfirm(false);
+  };
+
   const environmentPresets = [
     { id: 'urban', label: 'Urban Street', value: 'Jalanan Perkotaan yang Estetik (Urban Street)' },
     { id: 'hiking', label: 'Mountain Hiking', value: 'Jalur Pendakian Gunung dengan Bebatuan (Hiking Path)' },
     { id: 'studio', label: 'Minimalist Studio', value: 'Studio Foto Minimalis dengan Pencahayaan Lembut' },
+    { id: 'rumput_sintetis_elegan', label: 'Rumput Sintetis', value: 'Lantai rumput sintetis hijau elegan, bersih, rapi, minimalis dengan pencahayaan modern yang estetik' },
     { id: 'boss', label: 'Boss Pose', value: 'Duduk di Kursi Mewah dengan kaki menyilang di paha seperti Bos, dalam ruangan kantor eksekutif' },
     { id: 'hotel', label: 'Luxury Hotel', value: 'Lobi Hotel Bintang 5 dengan Lantai Marmer Mewah' },
     { id: 'redcarpet', label: 'Red Carpet', value: 'Karpet Merah Acara Gala dengan Pencahayaan Glamor' },
@@ -222,7 +474,24 @@ const GuberSepatu: React.FC = () => {
         <div className="p-4 lg:p-4 lg:flex-1 lg:overflow-hidden overflow-y-auto">
           <div className="lg:grid lg:grid-cols-12 lg:gap-4 lg:h-full lg:overflow-hidden flex flex-col">
             {/* Column 1: Config */}
-            <div className="lg:col-span-3 flex flex-col gap-4 lg:h-full lg:overflow-hidden lg:pr-4 lg:border-r lg:border-slate-200">
+            <div className="lg:col-span-3 flex flex-col gap-4 lg:h-full lg:overflow-hidden lg:pr-4 lg:border-r lg:border-slate-200 col-1-with-reset">
+              {/* Header inside config to control session reset */}
+              <div className="flex justify-between items-center shrink-0">
+                <span className="text-[10px] font-black text-slate-400 tracking-wider">SKOP KERJA</span>
+                <button
+                  onClick={handleClearAll}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase transition-all shadow-sm border ${
+                    showClearConfirm 
+                      ? 'bg-rose-600 border-rose-600 text-white animate-pulse' 
+                      : 'bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-100'
+                  }`}
+                  title="Bersihkan semua data dan mulai baru"
+                >
+                  <Trash2 size={11} />
+                  {showClearConfirm ? 'Yakin Reset?' : 'Mulai Baru'}
+                </button>
+              </div>
+
               {/* Tab Switcher */}
               <div className="flex p-1 bg-slate-100 rounded-2xl shrink-0">
                 <button
@@ -484,7 +753,11 @@ const GuberSepatu: React.FC = () => {
                             { id: 'FOLLOW', label: 'Ikuti Gambar' },
                             { id: 'REARRANGE', label: 'Atur Menarik (Hero)' },
                             { id: 'STACKED', label: 'Tumpuk Estetik' },
-                            { id: 'DIAGONAL', label: 'Damping Serong' }
+                            { id: 'DIAGONAL', label: 'Damping Serong' },
+                            { id: 'LEANING_BOX', label: 'Bersandar Kotak' },
+                            { id: 'DIAGONAL_OVERLAP', label: 'Tumpang Diagonal' },
+                            { id: 'UPRIGHT_SOLE', label: 'Tengkurap Berdiri' },
+                            { id: 'FLOATING_GLASS', label: 'Melayang Kaca' }
                           ].map(comp => (
                             <button
                               key={comp.id}

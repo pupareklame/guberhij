@@ -10,7 +10,7 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [primaryColor, setPrimaryColor] = useState(() => localStorage.getItem('primaryColor') || '#1a0b2e'); // Default super dark purple
+  const [primaryColor, setPrimaryColor] = useState(() => localStorage.getItem('primaryColor') || '#0C4F5F'); // Default theme color #0C4F5F
   const [secondaryColor, setSecondaryColor] = useState(() => localStorage.getItem('secondaryColor') || '#ffffff'); // Default white
 
   useEffect(() => {

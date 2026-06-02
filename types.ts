@@ -5,7 +5,7 @@ export enum AppId {
   GUBER_WARNA = 'GUBER_WARNA',
   GUBER_POSE = 'GUBER_POSE',
   GUBER_PAS_FOTO = 'GUBER_PAS_FOTO',
-  GUBER_MOCKUP = 'GUBER_MOCKUP',
+  GUBER_POV = 'GUBER_POV',
   GUBER_LUAS = 'GUBER_LUAS',
   GUBER_UBAH = 'GUBER_UBAH',
   GUBER_SS_VIDEO = 'GUBER_SS_VIDEO',
@@ -66,7 +66,8 @@ export enum AppId {
   GUBER_MEMORI = 'GUBER_MEMORI',
   GUBER_CITACITA2 = 'GUBER_CITACITA2',
   GUBER_SEPATU = 'GUBER_SEPATU',
-  IMAGE_TO_PROMPT = 'IMAGE_TO_PROMPT'
+  IMAGE_TO_PROMPT = 'IMAGE_TO_PROMPT',
+  GUBER_MINIDEKOR = 'GUBER_MINIDEKOR'
 }
 
 export interface FotoFashionConfig {
@@ -124,7 +125,9 @@ export interface PasFotoConfig {
   useTie: boolean;
   tieStyle: TieStyle;
   customTiePrompt?: string;
+  customTieImage?: string;
   customOutfitImage?: string;
+  customLogoImage?: string;
 }
 
 export interface KidsModelConfig {
@@ -146,7 +149,7 @@ export interface PoseConfig {
   customBg: string;
 }
 
-export interface MockUpConfig {
+export interface POVConfig {
   handType: 'LEFT' | 'RIGHT' | 'BOTH';
   productSize: 'SMALL' | 'MEDIUM' | 'LARGE';
   customSizeCm: number;
@@ -154,6 +157,19 @@ export interface MockUpConfig {
   colorNuance: string;
   customBgImage: string | null;
   aiBgPrompt: string;
+}
+
+export interface MiniDekorConfig {
+  vasBunga: string;
+  lampuMeja: string;
+  bukuFoto: string;
+  ornamenDekorasi: string;
+  lilinAromaterapi: string;
+  taplak: string;
+  warna: string;
+  suasana: string;
+  kamera: string;
+  warnaDinding: string;
 }
 
 export interface ExpandConfig {

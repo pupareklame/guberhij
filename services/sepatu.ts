@@ -32,6 +32,14 @@ export async function generateSepatu(image: string, config: SepatuConfig): Promi
         ? "Two shoes arranged in a stacked composition, one shoe upright showing the side profile and the other shoe tilted forward showing the bottom sole, placed on a clean white background, product photography style, studio lighting"
         : config.showroomComposition === 'DIAGONAL'
         ? "Two shoes arranged in a diagonal side-by-side composition, both showing the side profile, one shoe placed slightly behind and elevated higher than the other, overlapping arrangement, white background, product photography style, studio lighting"
+        : config.showroomComposition === 'LEANING_BOX'
+        ? "Two shoes leaning against a box, both facing the same direction showing side profile, placed on textured floor surface, striped wall background"
+        : config.showroomComposition === 'DIAGONAL_OVERLAP'
+        ? "Two shoes arranged in diagonal overlapping composition, both showing side profile, one slightly behind the other, minimal clean background"
+        : config.showroomComposition === 'UPRIGHT_SOLE'
+        ? "Two shoes, one upright showing side profile and one tilted forward showing the bottom sole, studio background"
+        : config.showroomComposition === 'FLOATING_GLASS'
+        ? "Single shoe floating on a glass surface, front three-quarter angle view, modern retail interior background with multiple shoes on illuminated wall shelves"
         : "Maintain the exact same placement and angle of the shoes as seen in the uploaded product image.";
 
       const inputResources: string[] = [];

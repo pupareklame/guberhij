@@ -1,7 +1,7 @@
 
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { getAI } from "./geminiService";
-import { MockUpConfig } from "../types";
+import { POVConfig } from "../types";
 
 const cleanBase64 = (base64: string) => {
   return base64.split(',')[1] || base64;
@@ -31,22 +31,36 @@ const getRandomSeed = () => Math.floor(Math.random() * 1000000);
 
 const handleApiError = (err: any) => {
   console.error("API Call Error:", err);
-  const msg = err?.message || "";
-  if (msg.includes("429")) {
-    throw new Error("API LIMIT: Kecepatan akses terlalu tinggi. Tunggu 30-60 detik sebelum menekan tombol lagi.");
-  }
-  if (msg.includes("quota")) {
-    throw new Error("KUOTA HABIS: Limit harian akun ini telah tercapai. Silakan ganti akun di sidebar.");
+  const msg = typeof err === 'string' ? err : (err?.message || JSON.stringify(err) || "");
+  
+  if (msg.includes("429") || msg.includes("quota") || msg.includes("RESOURCE_EXHAUSTED")) {
+    throw new Error("KUOTA GEMINI HABIS / LIMIT AKUN (429): Limit/kuota harian API bawaan telah tercapai atau kecepatan akses terlalu tinggi (RESOURCE_EXHAUSTED). Anda dapat terus menggunakan aplikasi ini dengan lancar tanpa hambatan dengan memasukkan API Key Gemini Anda sendiri di menu 'Settings' -> 'Secrets' (ikon roda gigi di pojok kanan bawah/atas) pada platform Google AI Studio (masukkan kunci dengan nama GEMINI_API_KEY). Silakan coba lagi setelah memasang API Key.");
   }
   throw new Error(msg || "Koneksi terputus. Silakan klik proses sekali lagi.");
 };
 
-export const generateMockup = async (product: string, config: MockUpConfig, aspectRatio: string = "9:16") => {
+export const generatePOV = async (product: string, config: POVConfig, aspectRatio: string = "9:16") => {
   try {
     const ai = getAI();
     const parts: any[] = [{ inlineData: { data: cleanBase64(product), mimeType: 'image/png' } }];
-    if (config.customBgImage) parts.push({ inlineData: { data: cleanBase64(config.customBgImage), mimeType: 'image/png' } });
-    parts.push({ text: `[MOCKUP TASK]: Place this product in a professional mockup. Hand type: ${config.handType}. Size: ${config.productSize}. Background: ${config.bgPreset}. Color nuance: ${config.colorNuance}. ${config.aiBgPrompt}` });
+    
+    let bgInstructions = `Background Style: ${config.bgPreset}. Color nuance: ${config.colorNuance}.`;
+    
+    if (config.customBgImage) {
+      parts.push({ inlineData: { data: cleanBase64(config.customBgImage), mimeType: 'image/png' } });
+      bgInstructions = `CRITICAL: You are provided with TWO images. The 1st image is the product. The 2nd image is a custom background. You MUST use the 2nd image (custom background) as the entire backdrop/background scenery of this photograph. Place the product from the 1st image in the foreground, being naturally held by the user's hand (${config.handType} hand, size description: ${config.productSize}), superimposed perfectly over that 2nd image background. Preserve the exact aesthetic and visual content of the 2nd image background as the backdrop of the scene. Make sure this custom background is slightly soft-focused or blurred (subtle camera lens focus blur) while the product and the hand in the foreground remain razor-sharp, ultra-clear, and perfectly detailed with high fidelity.`;
+    }
+
+    parts.push({ 
+      text: `[POV TASK]: Create a high-quality, professional POV (point of view) photo shoot.
+Product to hold: The product shown in the 1st image.
+Hand type holding the product: ${config.handType} Hand.
+Product size representation: ${config.productSize}.
+${bgInstructions}
+${config.aiBgPrompt || ''}
+Ensure realistic shadows, accurate depth of field (the background should have a subtle realistic camera focus bokeh blur), and natural integration. The hand should gracefully hold the product.`
+    });
+
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: [{ parts }],

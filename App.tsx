@@ -6,7 +6,8 @@ import UbahWarna from './apps/warna';
 import GuberPose from './apps/pose';
 import GuberPasFoto from './apps/pasfoto';
 import GuberCrop from './apps/crop';
-import GuberMockUp from './apps/mockup';
+import GuberPOV from './apps/pov';
+import GuberMiniDekor from './apps/minidekor';
 import GuberLuas from './apps/perluas';
 import GuberUbah from './apps/ubah';
 import GuberSSVideo from './apps/framevideo';
@@ -112,6 +113,19 @@ const AppContent: React.FC = () => {
     const saved = localStorage.getItem('guber_active_app');
     return (saved as AppId) || AppId.GUBER_HOME;
   });
+
+  useEffect(() => {
+    const handleSwitchApp = (e: Event) => {
+      const customEvent = e as CustomEvent<{ appId: AppId }>;
+      if (customEvent.detail && customEvent.detail.appId) {
+        handleSelect(customEvent.detail.appId);
+      }
+    };
+    window.addEventListener('switch-guber-app', handleSwitchApp);
+    return () => {
+      window.removeEventListener('switch-guber-app', handleSwitchApp);
+    };
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -253,7 +267,8 @@ const AppContent: React.FC = () => {
     { id: AppId.GUBER_SS_VIDEO, name: 'SS VIDEO', filename: 'framevideo.tsx', icon: <Icons.Video />, description: 'Ambil Frame Video' },
     { id: AppId.GUBER_UBAH, name: 'EDIT AJAIB', filename: 'ubah.tsx', icon: <Icons.Tool />, description: 'Transformasi Visual Bebas' },
     { id: AppId.GUBER_LUAS, name: 'PERLUAS FOTO', filename: 'perluas.tsx', icon: <Icons.Tool />, description: 'Outpainting AI' },
-    { id: AppId.GUBER_MOCKUP, name: 'MOCKUP PRODUK', filename: 'mockup.tsx', icon: <Icons.Tool />, description: 'Display Produk Profesional' },
+    { id: AppId.GUBER_POV, name: 'POV PRODUK', filename: 'pov.tsx', icon: <Icons.Tool />, description: 'Foto Produk POV' },
+    { id: AppId.GUBER_MINIDEKOR, name: 'MINIDEKOR', filename: 'minidekor.tsx', icon: <Icons.Flower />, description: 'Scandinavian & Aesthetics Decor' },
     { id: AppId.GUBER_ANIMAL, name: 'KOSTUM HEWAN', filename: 'bajuhewan.tsx', icon: <Icons.Magic />, description: 'Filter Kostum Unik' },
     { id: AppId.GUBER_FUSION, name: 'GABUNG OBJEK', filename: 'fusion.tsx', icon: <Icons.Magic />, description: 'Kreativitas Tanpa Batas' },
     { id: AppId.GUBER_GABUNG, name: 'GABUNG ORANG', filename: 'bersama.tsx', icon: <Icons.Magic />, description: 'Dua Foto Jadi Satu' },
@@ -325,7 +340,8 @@ const AppContent: React.FC = () => {
     AppId.GUBER_LATAR,
     AppId.LOGO_STUDIO,
     AppId.GUBER_MINIATUR,
-    AppId.GUBER_MOCKUP,
+    AppId.GUBER_POV,
+    AppId.GUBER_MINIDEKOR,
     AppId.GUBER_RESTORE,
     AppId.GUBER_PAS_FOTO,
     AppId.GUBER_LUAS,
@@ -365,7 +381,7 @@ const AppContent: React.FC = () => {
   const appSections = [
     { title: 'Favorit Saya', apps: filteredAppsMetadata.filter(a => favoriteApps.has(a.id)) },
     { title: 'Identity Tools', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_UMUR, AppId.GUBER_PAS_FOTO].includes(a.id)) },
-    { title: 'Food & Catalog', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_FOOD, AppId.GUBER_PRODUK, AppId.GUBER_MOCKUP, AppId.GUBER_PRODUK_ESTETIK, AppId.GUBER_FOOD_ESTETIK].includes(a.id)) },
+    { title: 'Food & Catalog', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_FOOD, AppId.GUBER_PRODUK, AppId.GUBER_POV, AppId.GUBER_MINIDEKOR, AppId.GUBER_PRODUK_ESTETIK, AppId.GUBER_FOOD_ESTETIK].includes(a.id)) },
     { title: 'Fashion & Style', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_GANTI_BAJU, AppId.GUBER_KAMAR_PAS, AppId.GUBER_WARNA, AppId.GUBER_MULTI_TRYON, AppId.GUBER_POSE, AppId.GUBER_EKSTRAK, AppId.GUBER_KIDS_MODEL, AppId.GUBER_FOTO_FASHION, AppId.GUBER_HIJAB_AI, AppId.GUBER_EKSTRAK_HIJAB, AppId.GUBER_KARPET, AppId.HAIR_TRYON, AppId.GUBER_SEPATU].includes(a.id)) },
     { title: 'Studio & Edit', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_EDIT, AppId.GUBER_TYPO, AppId.GUBER_CLEAN, AppId.GUBER_ERASER, AppId.GUBER_UPSCALE, AppId.GUBER_RESTORE, AppId.GUBER_LATAR, AppId.GUBER_CROP, AppId.GUBER_SS_VIDEO, AppId.GUBER_UBAH, AppId.GUBER_LUAS, AppId.GUBER_WATERMARK, AppId.COLOR_PICKER, AppId.IMAGE_TO_PROMPT].includes(a.id)) },
     { title: 'Kreatif', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_THUMBNAIL, AppId.GUBER_ANIMAL, AppId.GUBER_FUSION, AppId.GUBER_GABUNG, AppId.GUBER_GABUNG_PRO, AppId.GUBER_EDITIN, AppId.GUBER_HEADWEAR, AppId.GUBER_WEDDING, AppId.GUBER_SCENE, AppId.GUBER_FEED_GENERATOR, AppId.GUBER_BERPOLA, AppId.GUBER_SUARA_AI, AppId.GUBER_JADI_3D, AppId.GUBER_JIKANYATA, AppId.GUBER_MINIATUR, AppId.LOGO_STUDIO, AppId.GUBER_KARAKTER, AppId.GUBER_WISATA, AppId.GUBER_CYBORG, AppId.GUBER_CLAYMATION, AppId.GUBER_BUAT, AppId.GUBER_3D_RENDER, AppId.GUBER_ESTETIK, AppId.GUBER_MOCKUP_BAJU, AppId.GUBER_CITACITA, AppId.GUBER_CITACITA2, AppId.GUBER_GEMUKIN, AppId.GUBER_MEMORI, AppId.GUBER_SEPATU].includes(a.id)) },
@@ -398,7 +414,8 @@ const AppContent: React.FC = () => {
       { id: AppId.GUBER_SS_VIDEO, component: <GuberSSVideo /> },
       { id: AppId.GUBER_UBAH, component: <GuberUbah /> },
       { id: AppId.GUBER_LUAS, component: <GuberLuas /> },
-      { id: AppId.GUBER_MOCKUP, component: <GuberMockUp /> },
+      { id: AppId.GUBER_POV, component: <GuberPOV /> },
+      { id: AppId.GUBER_MINIDEKOR, component: <GuberMiniDekor /> },
       { id: AppId.GUBER_ANIMAL, component: <GuberAnimal /> },
       { id: AppId.GUBER_FUSION, component: <GuberFusion /> },
       { id: AppId.GUBER_GABUNG, component: <GuberGabung /> },
@@ -632,7 +649,7 @@ const AppContent: React.FC = () => {
 
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        <div className={`flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 lg:p-4`}> 
+        <div className={`flex-1 overflow-y-auto custom-scrollbar px-0 pt-0 pb-4 md:p-6 lg:p-4`}> 
           <div className="max-w-full mx-auto w-full">{renderApps()}</div>
         </div>
       </main>

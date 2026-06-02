@@ -38,6 +38,8 @@ const GuberPasFoto: React.FC = () => {
   const { primaryColor } = useTheme();
   const [faceImage, setFaceImage] = useState<string | null>(null);
   const [customOutfit, setCustomOutfit] = useState<string | null>(null);
+  const [customTie, setCustomTie] = useState<string | null>(null);
+  const [customLogo, setCustomLogo] = useState<string | null>(null);
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [originalResult, setOriginalResult] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
@@ -116,7 +118,12 @@ const GuberPasFoto: React.FC = () => {
     setProcessing({ isProcessing: true, error: null, progress: 'Neural Studio sedang menjahit seragam...' });
 
     try {
-      const result = await generatePasFoto(faceImage, { ...config, customOutfitImage: customOutfit || undefined });
+      const result = await generatePasFoto(faceImage, { 
+        ...config, 
+        customOutfitImage: customOutfit || undefined,
+        customTieImage: customTie || undefined,
+        customLogoImage: customLogo || undefined
+      });
       setResultImage(result);
       setOriginalResult(result);
       setProcessing({ isProcessing: false, error: null, progress: '' });
@@ -354,6 +361,39 @@ const GuberPasFoto: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Custom Tie Image Upload */}
+                <AnimatePresence>
+                  {config.useTie && config.tieStyle === 'CUSTOM' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-2 border-t border-slate-50 pt-2 overflow-hidden"
+                    >
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                          🎨 Unggah Dasi Kustom
+                        </label>
+                        {customTie && (
+                          <button
+                            onClick={() => setCustomTie(null)}
+                            className="text-[9px] font-bold text-rose-500 hover:text-rose-600 transition-all uppercase"
+                          >
+                            Hapus
+                          </button>
+                        )}
+                      </div>
+                      <ImageUploader
+                        label="Pilih File Gambar Dasi"
+                        image={customTie}
+                        onImageSelect={setCustomTie}
+                        aspectRatio="square"
+                        labelInside
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 {/* Size & Name Tag Row */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -393,6 +433,30 @@ const GuberPasFoto: React.FC = () => {
                       />
                     )}
                   </div>
+                </div>
+
+                {/* Custom Logo Upload Option */}
+                <div className="space-y-2 border-t border-slate-100 pt-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                      <span>🏷️ Logo Kustom Kantong</span>
+                    </label>
+                    {customLogo && (
+                      <button 
+                        onClick={() => setCustomLogo(null)}
+                        className="text-[9px] font-bold text-rose-500 hover:text-rose-600 transition-all uppercase"
+                      >
+                        Hapus
+                      </button>
+                    )}
+                  </div>
+                  <ImageUploader
+                    label="Unggah Logo Kantong"
+                    image={customLogo}
+                    onImageSelect={setCustomLogo}
+                    aspectRatio="square"
+                    labelInside
+                  />
                 </div>
               </div>
 

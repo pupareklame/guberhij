@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, GenerateContentResponse, Modality, Type } from "@google/genai";
-import { PasFotoConfig, KidsModelConfig, AnimeConfig, FusionConfig, GabungConfig, HaluConfig, MockUpConfig, ExpandConfig, GuberProdukConfig, WeddingConfig, SceneConfig, FotoFashionConfig } from "../types";
+import { PasFotoConfig, KidsModelConfig, AnimeConfig, FusionConfig, GabungConfig, HaluConfig, POVConfig, ExpandConfig, GuberProdukConfig, WeddingConfig, SceneConfig, FotoFashionConfig } from "../types";
 
 // Inisialisasi AI dengan dukungan rotasi multiple API Keys untuk menghindari rate limit
 let blacklistedKeys: Set<string> = new Set();
@@ -108,13 +108,10 @@ export const getRandomSeed = () => Math.floor(Math.random() * 1000000);
 
 const handleApiError = (err: any) => {
   console.error("API Call Error:", err);
-  const msg = err?.message || "";
+  const msg = typeof err === 'string' ? err : (err?.message || JSON.stringify(err) || "");
   
-  if (msg.includes("429")) {
-    throw new Error("API LIMIT: Kecepatan akses terlalu tinggi. Tunggu 30-60 detik sebelum menekan tombol lagi.");
-  }
-  if (msg.includes("quota")) {
-    throw new Error("KUOTA HABIS: Limit harian akun ini telah tercapai. Silakan ganti akun di sidebar.");
+  if (msg.includes("429") || msg.includes("quota") || msg.includes("RESOURCE_EXHAUSTED")) {
+    throw new Error("KUOTA GEMINI HABIS / LIMIT AKUN (429): Limit/kuota harian API bawaan telah tercapai atau kecepatan akses terlalu tinggi (RESOURCE_EXHAUSTED). Anda dapat terus menggunakan aplikasi ini dengan lancar tanpa hambatan dengan memasukkan API Key Gemini Anda sendiri di menu 'Settings' -> 'Secrets' (ikon roda gigi di pojok kanan bawah/atas) pada platform Google AI Studio (masukkan kunci dengan nama GEMINI_API_KEY). Silakan coba lagi setelah memasang API Key.");
   }
   throw new Error(msg || "Koneksi terputus. Silakan klik proses sekali lagi.");
 };
