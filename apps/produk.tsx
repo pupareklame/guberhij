@@ -182,7 +182,7 @@ const GuberProduk: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 lg:flex lg:overflow-hidden max-w-2xl lg:max-w-7xl mx-auto w-full bg-white border-x border-slate-100 shadow-sm">
+      <div className="flex-1 lg:flex lg:overflow-hidden max-w-2xl lg:max-w-7xl mx-auto w-full bg-[var(--color-app-bg)] border-x border-slate-100 shadow-sm">
         {/* Left Column: Inputs */}
         <div className="w-full lg:w-1/2 lg:h-full lg:overflow-y-auto p-4 lg:p-8 space-y-6 custom-scrollbar border-r border-slate-50">
           {/* Image Uploaders */}

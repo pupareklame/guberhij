@@ -196,7 +196,7 @@ const GuberKarpet: React.FC = () => {
 
   return (
     <div className="h-full bg-slate-50/50 overflow-y-auto lg:overflow-hidden custom-scrollbar">
-      <div className="max-w-2xl lg:max-w-7xl mx-auto min-h-full lg:h-screen bg-white flex flex-col border-x border-slate-100 shadow-sm">
+      <div className="max-w-2xl lg:max-w-7xl mx-auto min-h-full lg:h-screen bg-[var(--color-app-bg)] flex flex-col border-x border-slate-100 shadow-sm">
         {/* Header - Hidden on Desktop */}
         <div 
           className="p-4 border-b border-white/10 rounded-b-[40px] shadow-xl z-20 lg:hidden"

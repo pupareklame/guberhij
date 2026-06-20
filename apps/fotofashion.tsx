@@ -231,7 +231,7 @@ const FotoFashion: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 lg:grid lg:grid-cols-12 lg:gap-6 lg:p-6 lg:overflow-hidden max-w-2xl lg:max-w-[1600px] mx-auto w-full bg-white lg:bg-transparent border-x border-slate-100 lg:border-none shadow-sm lg:shadow-none">
+      <div className="flex-1 lg:grid lg:grid-cols-12 lg:gap-6 lg:p-6 lg:overflow-hidden max-w-2xl lg:max-w-[1600px] mx-auto w-full bg-[var(--color-app-bg)] lg:bg-transparent border-x border-slate-100 lg:border-none shadow-sm lg:shadow-none">
         {/* Column 1: Config (Desktop) */}
         <div className="w-full lg:col-span-4 lg:h-full lg:overflow-y-auto p-4 lg:p-8 space-y-10 custom-scrollbar bg-white lg:rounded-[32px] lg:shadow-sm border border-slate-100">
           {/* 1. Unggah Pakaian */}

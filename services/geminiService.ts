@@ -13,20 +13,20 @@ const getAIInternal = () => {
     "AIzaSyAjBj_lsDMoxk6h330-Iksy1U_-XlpEvpQ"
   ];
   
-  const keys: string[] = [...hardcodedKeys];
+  const envKeys: string[] = [];
   const isValidFormat = (k: string) => k && k.length > 20 && k.startsWith("AIza");
 
   if (process.env.GEMINI_API_KEY) {
     process.env.GEMINI_API_KEY.split(",").forEach(k => {
       const trimmed = k.trim();
-      if (isValidFormat(trimmed)) keys.push(trimmed);
+      if (isValidFormat(trimmed)) envKeys.push(trimmed);
     });
   }
   
   if (process.env.MY_EXTRA_KEYS) {
     process.env.MY_EXTRA_KEYS.split(",").forEach(k => {
       const trimmed = k.trim();
-      if (isValidFormat(trimmed)) keys.push(trimmed);
+      if (isValidFormat(trimmed)) envKeys.push(trimmed);
     });
   }
   
@@ -34,11 +34,15 @@ const getAIInternal = () => {
     const key = (process.env as any)[`MY_EXTRA_KEYS_${i}`];
     if (key) {
       const trimmed = key.trim();
-      if (isValidFormat(trimmed)) keys.push(trimmed);
+      if (isValidFormat(trimmed)) envKeys.push(trimmed);
     }
   }
   
-  const uniqueKeys = Array.from(new Set(keys));
+  // Jika terdapat kunci ENV yang sah, gunakan HANYA kunci ENV tersebut untuk menghindari 403 PERMISSION_DENIED.
+  // Sebaliknya, fallback ke kunci hardcoded jika tidak ada kunci ENV yang diset.
+  const keys = envKeys.length > 0 ? envKeys : hardcodedKeys;
+  
+  const uniqueKeys = Array.from(new Set(keys)).filter(isValidFormat);
   let availableKeys = uniqueKeys.filter(k => !blacklistedKeys.has(k));
   
   if (availableKeys.length === 0) {
@@ -56,7 +60,7 @@ export const getAI = () => {
   return genAI;
 };
 
-// Wrapper untuk menjalankan fungsi AI dengan retry otomatis jika kena limit
+// Wrapper untuk menjalankan fungsi AI dengan retry otomatis jika mengalami kendala atau kena limit
 export const runWithRetry = async (operation: (ai: any) => Promise<any>, maxRetries = 3) => {
   let lastError: any;
   
@@ -68,13 +72,15 @@ export const runWithRetry = async (operation: (ai: any) => Promise<any>, maxRetr
       lastError = err;
       const msg = err?.message || "";
       
-      if (msg.includes("429") || msg.includes("quota")) {
-        console.warn(`Key ${key.substring(0, 6)}... kena limit. Mencoba kunci lain (${i + 1}/${maxRetries})`);
-        blacklistedKeys.add(key);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        continue;
+      // Jika itu kesalahan karena safety atau recitation block, lemparkan langsung demi mencegah loop tak berguna.
+      if (msg.includes("SAFETY") || msg.includes("RECITATION") || msg.includes("block")) {
+        throw err;
       }
-      throw err;
+      
+      console.warn(`Key ${key.substring(0, 6)}... bermasalah (${msg || 'Unknown error'}). Mencoba kunci lain (${i + 1}/${maxRetries})...`);
+      blacklistedKeys.add(key);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      continue;
     }
   }
   return handleApiError(lastError);
@@ -973,3 +979,116 @@ export const generateFashionPhoto = async (
     return handleApiError(err);
   }
 };
+
+export const generateShoeScenes = async (shoeImageBase64: string, conceptPreset: string, customPrompt?: string) => {
+  try {
+    const ai = getAI();
+    const parts: any[] = [];
+
+    parts.push({
+      inlineData: {
+        data: cleanBase64(shoeImageBase64),
+        mimeType: 'image/png'
+      }
+    });
+
+    const systemInstructions = `ROLE:
+Anda adalah AI Creative Scene Generator untuk konten affiliate sepatu. Pengguna mengunggah gambar sepatu, lalu Anda membuat rangkaian 3 scene yang unik, mengejutkan, dan cocok dijadikan video pendek TikTok, Reels, atau Shorts.
+
+TUGAS:
+Analisis gambar sepatu yang diunggah dan gunakan sepatu tersebut sebagai objek utama dalam adegan (scene) ini. Jangan mengubah bentuk, warna, logo, atau detail sepatu. Buat 3 scene yang saling terhubung dengan konsep hook yang mengejutkan dan memancing rasa penasaran penonton.
+
+ATURAN SCENE:
+- Setiap scene harus berbeda tetapi masih memiliki kesinambungan cerita dari Scene 1 ke Scene 3.
+- Scene harus terlihat realistis seperti iklan Nike atau Adidas premium.
+- Gunakan pencahayaan sinematik dan efek visual dramatis.
+- Fokus pada visual yang membuat orang berhenti scrolling (hook yang kuat).
+- Jangan menambahkan manusia kecuali jika benar-benar diperlukan.
+- Pertahankan detail sepatu sesuai gambar asli dari input.
+
+CONTOH KONSEP (Misal Nangka):
+- SCENE 1: Sebuah buah nangka utuh berukuran besar berada di atas meja kayu. Pencahayaan dramatis dan suasana premium. Buah nangka mulai retak memancarkan pendaran cahaya magis.
+- SCENE 2: Nangka terbuka menjadi dua bagian. Alih-alih diisi daging buah, bagian dalamnya memperlihatkan sepatu dari gambar yang diunggah tersusun sempurna di tengah dengan percikan sari buah dan serat nangka beterbangan.
+- SCENE 3: Sepatu keluar dari dalam nangka dan melayang di udara dengan efek slow motion, percikan air dan partikel emas, latar belakang studio mewah premium seperti iklan Adidas premium.
+
+TEMA KONSEP YANG DIMINTA SEBAGAI DASAR IDEASI:
+Preset tema/konsep terpilih: "${conceptPreset}".
+Deskripsi rujukan tambahan khusus dari pengguna: "${customPrompt || 'Tidak ada'}".
+
+Tugas Anda adalah:
+Buatlah konsep ideasi 3 scene yang serupa yang sangat kreatif, tak terduga, absurd tapi masuk akal secara visual dan menghasilkan efek "WOW" (misalnya memakai semangka, batu permata, es kristal, kelapa, gunung, lava, bunga, awan, planet, durian, atau objek sehari-hari lainnya).
+
+Kembalikan respon dalam format JSON sesuai skema berikut:
+1. "konsepUtama": Judul ide singkat (misal: "Petualangan Lava Gunung Berapi" / "Ledakan Semangka Segar")
+2. "scenes": Array berisi tepat 3 objek scene, masing-masing dengan kunci:
+   - "number": Angka scene (1, 2, atau 3)
+   - "deskripsiGambar": Deskripsi detail adegan tersebut dalam bahasa Indonesia (bahasa komunikatif, dramatis)
+   - "promptImage": Prompt gambar detail dalam bahasa Inggris untuk generator AI Image (jelas, sebutkan detail sepatu, pencahayaan sinematik yang kuat, ultra-detailed, photorealistic, 3D render style, dsb)
+   - "promptVideo": Prompt video sinematik berdurasi 5 detik dalam bahasa Inggris (deskripsi dynamic movement, motion, slow-motion, camera slide/pan, VFX)`;
+
+    parts.push({ text: systemInstructions });
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.5-flash',
+      contents: [{ parts }],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            konsepUtama: { type: Type.STRING },
+            scenes: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  number: { type: Type.INTEGER },
+                  deskripsiGambar: { type: Type.STRING },
+                  promptImage: { type: Type.STRING },
+                  promptVideo: { type: Type.STRING }
+                },
+                required: ["number", "deskripsiGambar", "promptImage", "promptVideo"]
+              }
+            }
+          },
+          required: ["konsepUtama", "scenes"]
+        }
+      }
+    });
+
+    return JSON.parse(response.text || '{}');
+  } catch (err: any) {
+    return handleApiError(err);
+  }
+};
+
+export const generateSceneVideoPrompt = async (sceneImageBase64: string, scenePrompt: string) => {
+  try {
+    const ai = getAI();
+    const parts: any[] = [];
+    
+    parts.push({
+      inlineData: {
+        data: cleanBase64(sceneImageBase64),
+        mimeType: 'image/png'
+      }
+    });
+    
+    parts.push({
+      text: `Analyze this image, which was generated with the prompt: "${scenePrompt}". Based on its composition, subject matter, and visual theme, write a highly descriptive, professional, cinematic 5-second video prompt in English for tools like Sora, Runway, or Luma. Describe dynamic camera movements (e.g. slow pan, orbital sweep, slow-motion push-in), lighting transitions, and physical object motions (e.g. water splashes, glowing particles, dust swirling). Keep the output as a single descriptive paragraph. Do not return JSON or markdown formatting.`
+    });
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{ parts }]
+    });
+
+    return response.text?.trim() || "A cinematic, ultra-detailed 5-second video sequence of the product.";
+  } catch (err: any) {
+    return handleApiError(err);
+  }
+};
+
+
+
+

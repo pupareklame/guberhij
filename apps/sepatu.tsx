@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Footprints, User, Download, RefreshCw, Sparkles, Image as ImageIcon, Eye, Scissors, X, Check, Layers, Zap, Recycle, Trash2 } from 'lucide-react';
+import { Footprints, User, Download, RefreshCw, Sparkles, Image as ImageIcon, Eye, Scissors, X, Check, Layers, Zap, Recycle, Trash2, Camera, Layout, Settings, Droplets } from 'lucide-react';
 import Cropper from 'react-easy-crop';
 import { ProcessingState, SepatuConfig } from '../types';
 import { generateSepatu } from '../services/sepatu';
@@ -60,8 +60,10 @@ const GuberSepatu: React.FC = () => {
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [logoImage, setLogoImage] = useState<string | null>(null);
   const [soleMotifImage, setSoleMotifImage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'KATALOG' | 'SHOWROOM' | 'POV'>('KATALOG');
+  const [activeTab, setActiveTab] = useState<'KATALOG' | 'SHOWROOM' | 'POV' | 'POSTER'>('KATALOG');
   const [resultImage, setResultImage] = useState<string | null>(null);
+  const [posterSubtitle, setPosterSubtitle] = useState('');
+  const [posterTitle, setPosterTitle] = useState('');
   const [initialResultImage, setInitialResultImage] = useState<string | null>(null);
   const [beforeImage, setBeforeImage] = useState<string | null>(null);
   const [sliderPos, setSliderPos] = useState(50);
@@ -75,7 +77,10 @@ const GuberSepatu: React.FC = () => {
     aspectRatio: '9:16',
     mode: 'KATALOG',
     showroomAmbiance: 'DEFAULT',
-    showroomComposition: 'FOLLOW'
+    showroomComposition: 'FOLLOW',
+    posterTitleColor: 'ORANGE_WHITE',
+    posterTitleColorCustom: '',
+    posterShoeDisplay: 'SINGLE'
   });
 
   const [customEnv, setCustomEnv] = useState('');
@@ -114,6 +119,12 @@ const GuberSepatu: React.FC = () => {
       if (savedConfig) {
         setConfig(JSON.parse(savedConfig));
       }
+
+      const savedSubtitle = localStorage.getItem('guber_sepatu_posterSubtitle');
+      if (savedSubtitle) setPosterSubtitle(savedSubtitle);
+
+      const savedTitle = localStorage.getItem('guber_sepatu_posterTitle');
+      if (savedTitle) setPosterTitle(savedTitle);
     } catch (e) {
       console.warn("Gagal membaca sesi sepatu dari localStorage", e);
     }
@@ -143,6 +154,18 @@ const GuberSepatu: React.FC = () => {
       localStorage.setItem('guber_sepatu_config', JSON.stringify(config));
     } catch (e) {}
   }, [config]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('guber_sepatu_posterSubtitle', posterSubtitle);
+    } catch (e) {}
+  }, [posterSubtitle]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('guber_sepatu_posterTitle', posterTitle);
+    } catch (e) {}
+  }, [posterTitle]);
 
   // Sync originalImage
   useEffect(() => {
@@ -260,13 +283,19 @@ const GuberSepatu: React.FC = () => {
     setInitialResultImage(null);
     setBeforeImage(null);
     setCustomEnv('');
+    setPosterSubtitle('');
+    setPosterTitle('');
     setConfig({
       target: 'DEWASA_LAKI',
       environment: 'Jalanan Perkotaan yang Estetik (Urban Street)',
       aspectRatio: '9:16',
       mode: 'KATALOG',
       showroomAmbiance: 'DEFAULT',
-      showroomComposition: 'FOLLOW'
+      showroomComposition: 'FOLLOW',
+      posterPreset: 'FUTURISTIC',
+      posterTitleColor: 'ORANGE_WHITE',
+      posterTitleColorCustom: '',
+      posterShoeDisplay: 'SINGLE'
     });
 
     localStorage.removeItem('guber_sepatu_activeTab');
@@ -279,6 +308,8 @@ const GuberSepatu: React.FC = () => {
     localStorage.removeItem('guber_sepatu_aspectRatio');
     localStorage.removeItem('guber_sepatu_customEnv');
     localStorage.removeItem('guber_sepatu_config');
+    localStorage.removeItem('guber_sepatu_posterSubtitle');
+    localStorage.removeItem('guber_sepatu_posterTitle');
     
     setShowClearConfirm(false);
   };
@@ -337,9 +368,32 @@ const GuberSepatu: React.FC = () => {
     { id: 'SHELF', label: 'Shoe Shelf', value: 'standing next to a modern shoe shelf with neatly organized luxury footwear' },
   ];
 
+  const posterPresets = [
+    { id: 'FUTURISTIC', label: 'Cyberpunk Futuristik', value: 'FUTURISTIC', icon: Sparkles },
+    { id: 'GLITTER', label: 'Glitter Kilau Mewah', value: 'GLITTER', icon: Layers },
+    { id: 'LIGHTNING', label: 'Petir Kilat Elektrik', value: 'LIGHTNING', icon: Zap },
+    { id: 'SMOKE', label: 'Asap & Kabut Nitrogen', value: 'SMOKE', icon: RefreshCw },
+    { id: 'LAVA', label: 'Lava Api Membara', value: 'LAVA', icon: Zap },
+    { id: 'GEOMETRIC', label: 'Abstrak Geometris 3D', value: 'GEOMETRIC', icon: Layers },
+    { id: 'STREET_NEON', label: 'Jalanan Neon Kota', value: 'STREET_NEON', icon: ImageIcon },
+    { id: 'DARK_MINIMAL', label: 'Hitam Polos Studio', value: 'DARK_MINIMAL', icon: User },
+    { id: 'ROYAL', label: 'Nuansa Kerajaan', value: 'ROYAL', icon: Sparkles },
+    { id: 'VINTAGE', label: 'Klasik Jaman Dulu', value: 'VINTAGE', icon: Camera },
+    { id: 'PREMIUM_LEATHER', label: 'Kulit Premium', value: 'PREMIUM_LEATHER', icon: Layout },
+    { id: 'STEAMPUNK', label: 'Jam & Gear Klasik', value: 'STEAMPUNK', icon: Settings },
+    { id: 'LUXURY_SPLASH', label: 'Cipratan Air Mewah', value: 'LUXURY_SPLASH', icon: Droplets }
+  ];
+
   const handleImageUpload = (base64: string) => {
     setOriginalImage(base64);
     setResultImage(null);
+  };
+
+  const handleTabChange = (tab: 'KATALOG' | 'SHOWROOM' | 'POV' | 'POSTER') => {
+    setActiveTab(tab);
+    if (tab === 'POSTER') {
+      setAspectRatio('9:16');
+    }
   };
 
   const handleGenerate = async () => {
@@ -357,13 +411,15 @@ const GuberSepatu: React.FC = () => {
         ...config, 
         mode: activeTab,
         orientation: randomOrientation,
-        logo: (activeTab === 'SHOWROOM' || activeTab === 'POV') ? (logoImage || undefined) : undefined,
+        logo: (activeTab === 'SHOWROOM' || activeTab === 'POV' || activeTab === 'POSTER') ? (logoImage || undefined) : undefined,
         soleMotif: activeTab === 'SHOWROOM' ? (soleMotifImage || undefined) : undefined,
         environment: activeTab === 'SHOWROOM' ? 'Luxury Showroom' : (activeTab === 'POV' ? 'Aesthetic Room' : (customEnv || config.environment)), 
         showroomAmbiance: (activeTab === 'SHOWROOM' || activeTab === 'POV') ? (config.showroomAmbiance || 'DEFAULT') : undefined,
         showroomColor: (activeTab === 'SHOWROOM' || activeTab === 'POV') ? (config.showroomColor || undefined) : undefined,
         showroomComposition: activeTab === 'SHOWROOM' ? (config.showroomComposition || 'FOLLOW') : undefined,
         povPreset: activeTab === 'POV' ? (config.povPreset || 'DEFAULT') : undefined,
+        posterTitle: activeTab === 'POSTER' ? posterTitle : undefined,
+        posterSubtitle: activeTab === 'POSTER' ? posterSubtitle : undefined,
         additionalPrompt: config.additionalPrompt,
         aspectRatio 
       };
@@ -450,7 +506,7 @@ const GuberSepatu: React.FC = () => {
 
   return (
     <div className="lg:h-screen bg-slate-50/50 lg:overflow-hidden min-h-screen custom-scrollbar overflow-x-hidden">
-      <div className="max-w-2xl lg:max-w-full mx-auto lg:h-full bg-white flex flex-col border-x border-slate-100 shadow-sm">
+      <div className="max-w-2xl lg:max-w-full mx-auto lg:h-full bg-[var(--color-app-bg)] flex flex-col border-x border-slate-100 shadow-sm">
         {/* Header - Hidden on Desktop */}
         <div 
           className="p-4 border-b border-white/10 rounded-b-[40px] shadow-xl z-20 lg:hidden"
@@ -495,8 +551,8 @@ const GuberSepatu: React.FC = () => {
               {/* Tab Switcher */}
               <div className="flex p-1 bg-slate-100 rounded-2xl shrink-0">
                 <button
-                  onClick={() => setActiveTab('KATALOG')}
-                  className={`flex-1 py-3 lg:py-2 rounded-xl text-[11px] lg:text-[9px] font-black uppercase transition-all flex lg:flex-col items-center justify-center gap-2 lg:gap-0.5 ${
+                  onClick={() => handleTabChange('KATALOG')}
+                  className={`flex-1 py-3 lg:py-2 rounded-xl text-[9px] font-black uppercase transition-all flex lg:flex-col items-center justify-center gap-1.5 ${
                     activeTab === 'KATALOG' ? 'bg-white shadow-sm' : 'text-slate-400 hover:text-slate-600'
                   }`}
                   style={{ color: activeTab === 'KATALOG' ? primaryColor : undefined }}
@@ -504,8 +560,8 @@ const GuberSepatu: React.FC = () => {
                   <Footprints size={12} className="shrink-0" /> PAKAI
                 </button>
                 <button
-                  onClick={() => setActiveTab('POV')}
-                  className={`flex-1 py-3 lg:py-2 rounded-xl text-[11px] lg:text-[9px] font-black uppercase transition-all flex lg:flex-col items-center justify-center gap-2 lg:gap-0.5 ${
+                  onClick={() => handleTabChange('POV')}
+                  className={`flex-1 py-3 lg:py-2 rounded-xl text-[9px] font-black uppercase transition-all flex lg:flex-col items-center justify-center gap-1.5 ${
                     activeTab === 'POV' ? 'bg-white shadow-sm' : 'text-slate-400 hover:text-slate-600'
                   }`}
                   style={{ color: activeTab === 'POV' ? primaryColor : undefined }}
@@ -513,13 +569,22 @@ const GuberSepatu: React.FC = () => {
                    <Eye size={12} className="shrink-0" /> POV
                 </button>
                 <button
-                  onClick={() => setActiveTab('SHOWROOM')}
-                  className={`flex-1 py-3 lg:py-2 rounded-xl text-[11px] lg:text-[9px] font-black uppercase transition-all flex lg:flex-col items-center justify-center gap-2 lg:gap-0.5 ${
+                  onClick={() => handleTabChange('SHOWROOM')}
+                  className={`flex-1 py-3 lg:py-2 rounded-xl text-[9px] font-black uppercase transition-all flex lg:flex-col items-center justify-center gap-1.5 ${
                     activeTab === 'SHOWROOM' ? 'bg-white shadow-sm' : 'text-slate-400 hover:text-slate-600'
                   }`}
                   style={{ color: activeTab === 'SHOWROOM' ? primaryColor : undefined }}
                 >
                    <Sparkles size={12} className="shrink-0" /> TOKO
+                </button>
+                <button
+                  onClick={() => handleTabChange('POSTER')}
+                  className={`flex-1 py-3 lg:py-2 rounded-xl text-[9px] font-black uppercase transition-all flex lg:flex-col items-center justify-center gap-1.5 ${
+                    activeTab === 'POSTER' ? 'bg-white shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'
+                  }`}
+                  style={{ color: activeTab === 'POSTER' ? primaryColor : undefined }}
+                >
+                   <Sparkles size={12} className="shrink-0 text-amber-550" /> POSTER
                 </button>
               </div>
 
@@ -575,6 +640,26 @@ const GuberSepatu: React.FC = () => {
                           aspectRatio="1-1"
                           labelInside
                           description="Motif/warna untuk alas atau sol bawah sepatu"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : activeTab === 'POSTER' ? (
+                  <div className="space-y-8 animate-fadeIn">
+                    <div className="flex flex-col min-h-0 container-logo-poster">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                        <ImageIcon size={14} className="text-slate-300" /> 2. Unggah Logo Brand
+                      </label>
+                      <div className="h-40 shrink-0">
+                        <ImageUploader
+                          image={logoImage}
+                          onImageSelect={(b64) => setLogoImage(b64)}
+                          onClear={() => setLogoImage(null)}
+                          onCrop={() => { setCropSource('logo'); setIsCropping(true); }}
+                          label="🖼 Logo Image"
+                          aspectRatio="1-1"
+                          labelInside
+                          description="Seret & lepas logo format kotak"
                         />
                       </div>
                     </div>
@@ -784,6 +869,136 @@ const GuberSepatu: React.FC = () => {
                       />
                     </div>
                   </div>
+                ) : activeTab === 'POSTER' ? (
+                  <div className="flex flex-col gap-5 animate-fadeIn">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-1">
+                      <Sparkles size={14} className="text-slate-300" /> Desain Poster Iklan Sepatu
+                    </label>
+
+                    {/* Subtitle Input */}
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none block">Teks Kecil (Subtitle)</label>
+                      <input
+                        type="text"
+                        value={posterSubtitle}
+                        onChange={(e) => setPosterSubtitle(e.target.value)}
+                        placeholder="FUTURE OF RUNNING"
+                        className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-3xl text-sm font-semibold focus:border-slate-400 focus:outline-none transition-all shadow-inner placeholder:text-slate-400/30"
+                      />
+                    </div>
+
+                    {/* Title Input */}
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none block">Judul Poster (Title)</label>
+                      <input
+                        type="text"
+                        value={posterTitle}
+                        onChange={(e) => setPosterTitle(e.target.value)}
+                        placeholder="NEO SPEED"
+                        className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-3xl text-sm font-black focus:border-slate-400 focus:outline-none transition-all shadow-inner placeholder:text-slate-400/30"
+                      />
+                    </div>
+
+                    {/* Warna Judul Poster */}
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none block">Warna Judul Poster</label>
+                      <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
+                        {[
+                          { id: 'ORANGE_WHITE', label: 'Oranye & Putih', desc: 'Gradasi sporty ikonik' },
+                          { id: 'GOLD', label: 'Emas Glowing', desc: 'Mewah & eksklusif' },
+                          { id: 'CYAN_BLUE', label: 'Biru Neon', desc: 'Futuristik elektrik' },
+                          { id: 'EMERALD', label: 'Hijau Zamrud', desc: 'Modern & segar' },
+                          { id: 'LAVA_RED', label: 'Merah Lava', desc: 'Panas & membara' },
+                          { id: 'SILVER', label: 'Perak Klasik', desc: 'Retro metalik' },
+                          { id: 'CUSTOM', label: 'Warna Kustom', desc: 'Tentukan warna sendiri' },
+                        ].map((colorPreset) => (
+                          <button
+                            key={colorPreset.id}
+                            type="button"
+                            onClick={() => setConfig({ ...config, posterTitleColor: colorPreset.id })}
+                            className={`p-2.5 rounded-2xl border-2 flex flex-col items-start gap-1 text-left transition-all relative overflow-hidden ${
+                              (config.posterTitleColor || 'ORANGE_WHITE') === colorPreset.id ? 'bg-white shadow-md border-slate-900 text-slate-900' : 'bg-slate-50 border-slate-100 text-slate-500'
+                            }`}
+                            style={(config.posterTitleColor || 'ORANGE_WHITE') === colorPreset.id ? { borderColor: primaryColor } : {}}
+                          >
+                            <span className="text-[10px] font-extrabold uppercase leading-none" style={(config.posterTitleColor || 'ORANGE_WHITE') === colorPreset.id ? { color: primaryColor } : {}}>{colorPreset.label}</span>
+                            <span className="text-[8px] font-medium text-slate-400 leading-tight block mt-0.5">{colorPreset.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Custom Title Color Input */}
+                    {(config.posterTitleColor === 'CUSTOM') && (
+                      <div className="space-y-2 animate-fadeIn">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none block">Preset Kolom Isi Nama Warna Poster</label>
+                        <input
+                          type="text"
+                          value={config.posterTitleColorCustom || ''}
+                          onChange={(e) => setConfig({ ...config, posterTitleColorCustom: e.target.value })}
+                          placeholder="Contoh: Fuschia Neon Glowing, Pink Metalik, Hijau Toska..."
+                          className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-3xl text-sm font-semibold focus:border-slate-400 focus:outline-none transition-all shadow-inner placeholder:text-slate-400/50"
+                        />
+                      </div>
+                    )}
+
+                    {/* Opsi Tampilan Sepatu */}
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none block">Pilihan Tampilan Sepatu</label>
+                      <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl">
+                        {[
+                          { id: 'SINGLE', label: 'Satu Sepatu Saja (Seperti Sekarang)' },
+                          { id: 'PAIR_WITH_BOX', label: 'Sepasang dengan Kotak (Seperti pada Toko)' }
+                        ].map(opt => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => setConfig({ ...config, posterShoeDisplay: opt.id as any })}
+                            className={`py-2 px-1 rounded-lg text-[9px] font-black transition-all ${
+                              (config.posterShoeDisplay || 'SINGLE') === opt.id ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'
+                            }`}
+                            style={(config.posterShoeDisplay || 'SINGLE') === opt.id ? { color: primaryColor } : {}}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Background Preset Option */}
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none block">Pilih Efek Latar Poster</label>
+                      <div className="grid grid-cols-2 gap-1.5 max-h-56 overflow-y-auto pr-1 custom-scrollbar">
+                        {posterPresets.map((preset) => (
+                          <button
+                            key={preset.id}
+                            onClick={() => setConfig({ ...config, posterPreset: preset.value })}
+                            className={`p-3 rounded-2xl border-2 flex items-center gap-2 transition-all relative overflow-hidden ${
+                              (config.posterPreset || 'FUTURISTIC') === preset.value ? 'bg-white shadow-md border-slate-900 text-slate-900' : 'bg-slate-50 border-slate-100 text-slate-500'
+                            }`}
+                            style={(config.posterPreset || 'FUTURISTIC') === preset.value ? { borderColor: primaryColor } : {}}
+                          >
+                            <span className="p-1.5 rounded-lg bg-slate-100/50 shrink-0">
+                              <preset.icon size={14} style={(config.posterPreset || 'FUTURISTIC') === preset.value ? { color: primaryColor } : {}} />
+                            </span>
+                            <span className="text-[10px] font-extrabold uppercase text-left leading-tight" style={(config.posterPreset || 'FUTURISTIC') === preset.value ? { color: primaryColor } : {}}>{preset.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Instruksi Tambahan */}
+                    <div className="space-y-2 pt-2 border-t border-slate-100">
+                      <label className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none block">Instruksi Tambahan (Opsional)</label>
+                      <textarea
+                        value={config.additionalPrompt || ''}
+                        onChange={(e) => setConfig({ ...config, additionalPrompt: e.target.value })}
+                        placeholder="Contoh: Pegerakan petir neon biru/orange di latar, asap nitrogen, dsb..."
+                        rows={3}
+                        className="w-full p-4 bg-white border-2 border-slate-100 rounded-2xl text-[10px] font-medium focus:border-slate-300 focus:outline-none transition-all shadow-inner resize-none"
+                      />
+                    </div>
+                  </div>
                 ) : (
                   <div className="flex flex-col gap-5">
                     {/* Pilih Latar POV */}
@@ -896,7 +1111,7 @@ const GuberSepatu: React.FC = () => {
                 <button
                   onClick={handleGenerate}
                   disabled={processing.isProcessing || !originalImage}
-                  className="w-full py-5 rounded-3xl text-white font-black uppercase tracking-[0.2em] text-sm shadow-xl transition-all active:scale-95 disabled:opacity-30 flex items-center justify-center gap-3"
+                  className="w-full py-5 rounded-3xl text-white font-black uppercase tracking-[0.2em] text-sm shadow-2xl border-2 border-white transition-all active:scale-95 flex items-center justify-center gap-3"
                   style={{ backgroundColor: (processing.isProcessing || !originalImage) ? '#cbd5e1' : primaryColor }}
                 >
                   HASILKAN
@@ -1027,10 +1242,9 @@ const GuberSepatu: React.FC = () => {
                     onClick={handleGenerate}
                     disabled={processing.isProcessing || !originalImage}
                     title="Generate"
-                    className="hidden lg:flex order-5 lg:order-first col-span-1 lg:col-span-2 py-4 rounded-2xl border-2 text-white items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg disabled:opacity-30"
+                    className="hidden lg:flex order-5 lg:order-first col-span-1 lg:col-span-2 py-4 rounded-2xl border-2 border-white text-white items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-2xl"
                     style={{ 
                       backgroundColor: (processing.isProcessing || !originalImage) ? '#cbd5e1' : primaryColor,
-                      borderColor: (processing.isProcessing || !originalImage) ? '#cbd5e1' : primaryColor
                     }}
                   >
                     <span className="font-black uppercase tracking-widest text-[10px]">HASILKAN</span>

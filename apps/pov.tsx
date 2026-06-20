@@ -182,7 +182,7 @@ const GuberPOV: React.FC = () => {
 
   return (
     <div className="h-full bg-slate-50/50 overflow-y-auto custom-scrollbar">
-      <div className="max-w-2xl mx-auto min-h-full bg-white flex flex-col border-x border-slate-100">
+      <div className="max-w-2xl mx-auto min-h-full bg-[var(--color-app-bg)] flex flex-col border-x border-slate-100">
         {/* Header */}
         <div 
           className="p-4 border-b border-white/10 rounded-b-[40px] shadow-xl"

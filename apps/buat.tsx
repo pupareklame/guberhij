@@ -170,7 +170,7 @@ const BuatApp: React.FC = () => {
 
   return (
     <div className="lg:h-screen bg-slate-50/50 lg:overflow-hidden min-h-screen custom-scrollbar overflow-x-hidden">
-      <div className="max-w-2xl lg:max-w-full mx-auto lg:h-full bg-white flex flex-col border-x border-slate-100 shadow-sm">
+      <div className="max-w-2xl lg:max-w-full mx-auto lg:h-full bg-[var(--color-app-bg)] flex flex-col border-x border-slate-100 shadow-sm">
         {/* Header - Hidden on Desktop */}
         <div 
           className="p-4 border-b border-white/10 rounded-b-[40px] shadow-xl z-20 lg:hidden"

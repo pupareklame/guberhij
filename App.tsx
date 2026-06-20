@@ -64,6 +64,7 @@ import GuberRambut from './apps/rambut';
 import MemoryApp from './apps/memori';
 import GuberSepatu from './apps/sepatu';
 import GuberImg2Prompt from './apps/img2prompt';
+import GuberPrompt from './apps/prompt';
 import GabungPro from './apps/gabungpro';
 import GuberManager from './apps/manager';
 import { ShieldCheck, Globe, Menu } from 'lucide-react';
@@ -113,6 +114,28 @@ const AppContent: React.FC = () => {
     const saved = localStorage.getItem('guber_active_app');
     return (saved as AppId) || AppId.GUBER_HOME;
   });
+
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [loadingDots, setLoadingDots] = useState('.');
+
+  useEffect(() => {
+    const dotInterval = setInterval(() => {
+      setLoadingDots((prev) => {
+        if (prev === '...') return '.';
+        if (prev === '..') return '...';
+        return '..';
+      });
+    }, 500);
+
+    const loadTimer = setTimeout(() => {
+      setIsInitialLoading(false);
+    }, 2500);
+
+    return () => {
+      clearInterval(dotInterval);
+      clearTimeout(loadTimer);
+    };
+  }, []);
 
   useEffect(() => {
     const handleSwitchApp = (e: Event) => {
@@ -198,9 +221,17 @@ const AppContent: React.FC = () => {
     const savedFavs = localStorage.getItem('guber_favorite_apps');
     if (savedFavs) {
       const parsed = JSON.parse(savedFavs) as AppId[];
-      setFavoriteApps(new Set<AppId>(parsed));
+      const set = new Set<AppId>(parsed);
+      set.add(AppId.GUBER_PROMPT_VIDEO);
+      setFavoriteApps(set);
     } else {
-      const defaultFavs = [AppId.GUBER_POSE, AppId.GUBER_MULTI_TRYON, AppId.GUBER_GANTI_BAJU, AppId.GUBER_LATAR];
+      const defaultFavs = [
+        AppId.GUBER_POSE, 
+        AppId.GUBER_MULTI_TRYON, 
+        AppId.GUBER_GANTI_BAJU, 
+        AppId.GUBER_LATAR,
+        AppId.GUBER_PROMPT_VIDEO
+      ];
       setFavoriteApps(new Set<AppId>(defaultFavs));
     }
   }, []);
@@ -306,6 +337,7 @@ const AppContent: React.FC = () => {
     { id: AppId.GUBER_MEMORI, name: 'MEMORI AI', filename: 'memori.tsx', icon: <Icons.Magic />, description: 'Emotional Childhood transition' },
     { id: AppId.GUBER_SEPATU, name: 'ALAS KAKI AI', filename: 'sepatu.tsx', icon: <Icons.Fashion />, description: 'Virtual Footwear Try-On' },
     { id: AppId.IMAGE_TO_PROMPT, name: 'IMAGE TO PROMPT', filename: 'img2prompt.tsx', icon: <Icons.Magic />, description: 'Generate Prompt dari Gambar' },
+    { id: AppId.GUBER_PROMPT_VIDEO, name: 'PROMPT VIDEO', filename: 'prompt.tsx', icon: <Icons.Video />, description: 'AI Image to 5s Video Prompt' },
   ];
 
   const APPS_WITH_DEDICATED_SERVICES = [
@@ -371,6 +403,7 @@ const AppContent: React.FC = () => {
     AppId.GUBER_MEMORI,
     AppId.GUBER_SEPATU,
     AppId.IMAGE_TO_PROMPT,
+    AppId.GUBER_PROMPT_VIDEO,
   ];
 
   const filteredAppsMetadata = allAppsMetadata.filter(app => 
@@ -383,7 +416,7 @@ const AppContent: React.FC = () => {
     { title: 'Identity Tools', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_UMUR, AppId.GUBER_PAS_FOTO].includes(a.id)) },
     { title: 'Food & Catalog', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_FOOD, AppId.GUBER_PRODUK, AppId.GUBER_POV, AppId.GUBER_MINIDEKOR, AppId.GUBER_PRODUK_ESTETIK, AppId.GUBER_FOOD_ESTETIK].includes(a.id)) },
     { title: 'Fashion & Style', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_GANTI_BAJU, AppId.GUBER_KAMAR_PAS, AppId.GUBER_WARNA, AppId.GUBER_MULTI_TRYON, AppId.GUBER_POSE, AppId.GUBER_EKSTRAK, AppId.GUBER_KIDS_MODEL, AppId.GUBER_FOTO_FASHION, AppId.GUBER_HIJAB_AI, AppId.GUBER_EKSTRAK_HIJAB, AppId.GUBER_KARPET, AppId.HAIR_TRYON, AppId.GUBER_SEPATU].includes(a.id)) },
-    { title: 'Studio & Edit', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_EDIT, AppId.GUBER_TYPO, AppId.GUBER_CLEAN, AppId.GUBER_ERASER, AppId.GUBER_UPSCALE, AppId.GUBER_RESTORE, AppId.GUBER_LATAR, AppId.GUBER_CROP, AppId.GUBER_SS_VIDEO, AppId.GUBER_UBAH, AppId.GUBER_LUAS, AppId.GUBER_WATERMARK, AppId.COLOR_PICKER, AppId.IMAGE_TO_PROMPT].includes(a.id)) },
+    { title: 'Studio & Edit', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_EDIT, AppId.GUBER_TYPO, AppId.GUBER_CLEAN, AppId.GUBER_ERASER, AppId.GUBER_UPSCALE, AppId.GUBER_RESTORE, AppId.GUBER_LATAR, AppId.GUBER_CROP, AppId.GUBER_SS_VIDEO, AppId.GUBER_UBAH, AppId.GUBER_LUAS, AppId.GUBER_WATERMARK, AppId.COLOR_PICKER, AppId.IMAGE_TO_PROMPT, AppId.GUBER_PROMPT_VIDEO].includes(a.id)) },
     { title: 'Kreatif', apps: filteredAppsMetadata.filter(a => !favoriteApps.has(a.id) && [AppId.GUBER_THUMBNAIL, AppId.GUBER_ANIMAL, AppId.GUBER_FUSION, AppId.GUBER_GABUNG, AppId.GUBER_GABUNG_PRO, AppId.GUBER_EDITIN, AppId.GUBER_HEADWEAR, AppId.GUBER_WEDDING, AppId.GUBER_SCENE, AppId.GUBER_FEED_GENERATOR, AppId.GUBER_BERPOLA, AppId.GUBER_SUARA_AI, AppId.GUBER_JADI_3D, AppId.GUBER_JIKANYATA, AppId.GUBER_MINIATUR, AppId.LOGO_STUDIO, AppId.GUBER_KARAKTER, AppId.GUBER_WISATA, AppId.GUBER_CYBORG, AppId.GUBER_CLAYMATION, AppId.GUBER_BUAT, AppId.GUBER_3D_RENDER, AppId.GUBER_ESTETIK, AppId.GUBER_MOCKUP_BAJU, AppId.GUBER_CITACITA, AppId.GUBER_CITACITA2, AppId.GUBER_GEMUKIN, AppId.GUBER_MEMORI, AppId.GUBER_SEPATU].includes(a.id)) },
   ];
 
@@ -453,6 +486,7 @@ const AppContent: React.FC = () => {
       { id: AppId.GUBER_MEMORI, component: <MemoryApp /> },
       { id: AppId.GUBER_SEPATU, component: <GuberSepatu /> },
       { id: AppId.IMAGE_TO_PROMPT, component: <GuberImg2Prompt /> },
+      { id: AppId.GUBER_PROMPT_VIDEO, component: <GuberPrompt /> },
       { id: AppId.GUBER_MANAGER, component: <GuberManager /> },
     ];
 
@@ -467,10 +501,56 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div 
-      className="h-screen font-sans text-slate-900 flex overflow-hidden transition-colors duration-500"
-      style={{ backgroundColor: `color-mix(in srgb, ${primaryColor}, white 95%)` }}
-    >
+    <>
+      <AnimatePresence>
+        {isInitialLoading && (
+          <motion.div 
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0, y: -40 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-950 text-white select-none overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-radial-gradient from-slate-900 via-slate-950 to-slate-950 opacity-80" />
+            <div className="relative z-10 flex flex-col items-center gap-6">
+              <div className="relative flex items-center justify-center">
+                {/* Outer glowing aura */}
+                <div 
+                  className="absolute w-28 h-28 opacity-25 blur-2xl rounded-full animate-pulse" 
+                  style={{ backgroundColor: primaryColor || '#ea580c' }}
+                />
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
+                  className="w-24 h-24 flex items-center justify-center"
+                >
+                  <img 
+                    src="https://i.ibb.co.com/HLG6zZnr/LOGO-GUBER.png" 
+                    className="w-full h-full object-contain rounded-full drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]" 
+                    alt="Guber Logo" 
+                  />
+                </motion.div>
+              </div>
+              
+              <div className="flex flex-col items-center">
+                <h2 className="text-xl font-black uppercase tracking-[0.3em] italic text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400">
+                  Guber Studio
+                </h2>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-2 text-center flex items-center justify-center">
+                  Welcome
+                  <span className="inline-block text-left w-6 ml-0.5" style={{ color: primaryColor || '#ea580c' }}>
+                    {loadingDots}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div 
+        className="h-screen font-sans text-slate-900 flex overflow-hidden transition-colors duration-500"
+        style={{ backgroundColor: `color-mix(in srgb, ${primaryColor}, white 95%)` }}
+      >
       {/* Backdrop for mobile sidebar */}
       {isSidebarOpen && (
         <div 
@@ -654,6 +734,7 @@ const AppContent: React.FC = () => {
         </div>
       </main>
     </div>
+    </>
   );
 };
 

@@ -216,7 +216,7 @@ const GuberCitaCita2: React.FC = () => {
 
   return (
     <div className="lg:h-screen bg-slate-50/50 lg:overflow-hidden min-h-screen custom-scrollbar overflow-x-hidden text-slate-900 font-sans">
-      <div className="max-w-2xl lg:max-w-full mx-auto lg:h-full bg-white flex flex-col border-x border-slate-100 shadow-sm relative">
+      <div className="max-w-2xl lg:max-w-full mx-auto lg:h-full bg-[var(--color-app-bg)] flex flex-col border-x border-slate-100 shadow-sm relative">
         
         {/* Header - Hidden on Desktop */}
         <div 

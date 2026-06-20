@@ -157,6 +157,95 @@ export async function generateSepatu(image: string, config: SepatuConfig): Promi
           distorted footwear, changed design, blurry product, extra fingers, deformed hand, floating shoes, messy background, oversaturated colors, cartoon style, unrealistic shadows, duplicate products, low quality, watermark, text artifacts.
         `;
       }
+    } else if (config.mode === 'POSTER') {
+      const subtitle = config.posterSubtitle || "FUTURE OF RUNNING";
+      const title = config.posterTitle || "NEO FAST";
+      
+      const inputResources: string[] = ["- Image 1 is the main shoe product [SHOE_IMAGE] to be showcased in the poster."];
+      if (config.logo) {
+        inputResources.push("- Image 2 is the brand logo [LOGO_IMAGE] to be placed centered above the text area.");
+      }
+
+      let backgroundDesc = "Background should be dark black with depth and bokeh effects. Include abstract futuristic geometric symbols and floating glowing elements in blue and orange colors. Add soft blur and cyber-tech atmosphere.";
+      if (config.posterPreset === 'GLITTER') {
+        backgroundDesc = "Background should be luxurious with sparkling and shimmering gold and silver glitter particles, beautiful scattering light bokeh effects, luxury deep dark background with high-end vibes.";
+      } else if (config.posterPreset === 'LIGHTNING') {
+        backgroundDesc = "Background should be a dramatic dark stormy sky with energetic bright electric lightning bolts flashing, neon light blue and magenta contrasting hues, sparking cybernetic energy.";
+      } else if (config.posterPreset === 'SMOKE') {
+        backgroundDesc = "Background should be filled with thick mysterious cold nitrogen smoke and fog clouds rolling and floating, dark professional product photography studio stage setup with dramatic spotlights.";
+      } else if (config.posterPreset === 'LAVA') {
+        backgroundDesc = "Background should be deep obsidian volcanic rocks with glowing magma lava cracks, bright orange fire sparks and embers floating upwards, heat distortion and intense dark energy.";
+      } else if (config.posterPreset === 'GEOMETRIC') {
+        backgroundDesc = "Background should be an abstract 3D geometric art room, clean composition with floating modern minimal 3D geometrical shapes, smooth pastel neon color gradients, luxury product gallery setup.";
+      } else if (config.posterPreset === 'STREET_NEON') {
+        backgroundDesc = "Background should be a wet urban street pavement at night, reflecting bright neon signs and street lights, cinematic cyberpunk alley environment with beautiful bokeh and deep contrast.";
+      } else if (config.posterPreset === 'DARK_MINIMAL') {
+        backgroundDesc = "Background should be a professional high-end pitch black minimalist photo studio backdrops, extreme clean dark space, soft spotlight glow, keeping focus entirely on the floating shoe object.";
+      } else if (config.posterPreset === 'ROYAL') {
+        backgroundDesc = "Background should be a grand majestic royal palace interior out of focus, rich crimson red velvet drapes, elegant gold ornaments, warm glowing chandelier lights, and opulent luxury atmosphere.";
+      } else if (config.posterPreset === 'VINTAGE') {
+        backgroundDesc = "Background should have a nostalgic classic vintage aesthetic, sepia-toned retro moody lighting, old dusty wooden shelves in the background, classic timeless vibe, and analog film grain texture.";
+      } else if (config.posterPreset === 'PREMIUM_LEATHER') {
+        backgroundDesc = "Background should be rich dark brown premium leather texture and dark mahogany wood, high-end gentleman club aesthetic, soft warm ambient lighting, elegant and sophisticated artisan vibes.";
+      } else if (config.posterPreset === 'STEAMPUNK') {
+        backgroundDesc = "Background should be a moody steampunk engine room, antique brass gears and vintage clockwork mechanisms, warm golden hour lighting, steam effects, Victorian industrial aesthetic.";
+      } else if (config.posterPreset === 'LUXURY_SPLASH') {
+        backgroundDesc = "Background should be a luxury advertisement, dramatic splash, high-speed photography, dynamic composition, premium lighting, glossy reflections, blue ocean tones, crystal-clear water droplets, cinematic atmosphere, shallow depth of field, photorealistic, award-winning commercial poster.";
+      }
+
+       let textColorDesc = "CRITICAL: The title font MUST be exactly Times New Roman Bold (heavy, ultra bold classic serif typeface). Every single letter must show the distinctive transitional thick-and-thin Roman stroke weights and elegant prominent bracketed serifs. Absolutely no blocky, sporty, or modern sans-serif fonts are allowed. The first word must be rendered in an orange gradient and the second word in a white/silver gradient with an elegant glow.";
+       if (config.posterTitleColor === 'GOLD') {
+         textColorDesc = "CRITICAL: The title font MUST be exactly Times New Roman Bold (heavy, ultra bold classic serif typeface). Every single letter must show the distinctive transitional thick-and-thin Roman stroke weights and elegant prominent bracketed serifs. Absolutely no blocky, sporty, or modern sans-serif fonts are allowed. Style the text in a highly polished, luxurious 3D metallic gold gradient with bright highlights and golden glow.";
+       } else if (config.posterTitleColor === 'CYAN_BLUE') {
+         textColorDesc = "CRITICAL: The title font MUST be exactly Times New Roman Bold (heavy, ultra bold classic serif typeface). Every single letter must show the distinctive transitional thick-and-thin Roman stroke weights and elegant prominent bracketed serifs. Absolutely no blocky, sporty, or modern sans-serif fonts are allowed. Style the text in vibrant neon cyan and futuristic 3D blue glowing letters.";
+       } else if (config.posterTitleColor === 'EMERALD') {
+         textColorDesc = "CRITICAL: The title font MUST be exactly Times New Roman Bold (heavy, ultra bold classic serif typeface). Every single letter must show the distinctive transitional thick-and-thin Roman stroke weights and elegant prominent bracketed serifs. Absolutely no blocky, sporty, or modern sans-serif fonts are allowed. Style the text in sleek emerald green and white glossy letters with a bright sci-fi glow.";
+       } else if (config.posterTitleColor === 'LAVA_RED') {
+         textColorDesc = "CRITICAL: The title font MUST be exactly Times New Roman Bold (heavy, ultra bold classic serif typeface). Every single letter must show the distinctive transitional thick-and-thin Roman stroke weights and elegant prominent bracketed serifs. Absolutely no blocky, sporty, or modern sans-serif fonts are allowed. Style the text in an aggressive, bright burning lava-red and flaming magma-orange glowing 3D texture.";
+       } else if (config.posterTitleColor === 'SILVER') {
+         textColorDesc = "CRITICAL: The title font MUST be exactly Times New Roman Bold (heavy, ultra bold classic serif typeface). Every single letter must show the distinctive transitional thick-and-thin Roman stroke weights and elegant prominent bracketed serifs. Absolutely no blocky, sporty, or modern sans-serif fonts are allowed. Style the text in metallic polished chrome and silver with retro speed highlights.";
+       } else if (config.posterTitleColor === 'CUSTOM' && config.posterTitleColorCustom) {
+         textColorDesc = `CRITICAL: The title font MUST be exactly Times New Roman Bold (heavy, ultra bold classic serif typeface). Every single letter must show the distinctive transitional thick-and-thin Roman stroke weights and elegant prominent bracketed serifs. Absolutely no blocky, sporty, or modern sans-serif fonts are allowed. Style the text in high-end dynamic gradient typography colored in: "${config.posterTitleColorCustom}" with a premium metallic finish and bright glow.`;
+       }
+
+      let shoeDisplayDesc = `Use the uploaded shoe image [ref: Image 1, your shoe image] as the main object. Extract only one shoe and place it in side profile view facing right. Preserve all details, colors, materials, textures, and branding exactly from the original shoe image.
+        The shoe should float in the center with dramatic cinematic lighting, glowing edges, soft shadows, and subtle reflections underneath.`;
+      
+      if (config.posterShoeDisplay === 'PAIR_WITH_BOX') {
+        shoeDisplayDesc = `Use the uploaded shoe image [ref: Image 1, your shoe image] as the main object. Showcase a matching PAIR of these shoes (left and right shoes arranged together dynamically) positioned beautifully next to or leaning on their premium custom shoe cardboard box (as seen on store shelf displays). Preserve all details, colors, materials, textures, and branding exactly from the original shoe image.
+        The shoe pair and their box should be the center focus of the scene with dramatic cinematic lighting, soft shadows, and subtle reflections underneath.`;
+      }
+
+      prompt = `
+        [PREMIUM FUTURISTIC SPORTS SHOE ADVERTISING POSTER]:
+        Inputs provided:
+        ${inputResources.join("\n        ")}
+
+        Create a premium futuristic sports shoe advertising poster in vertical 9:16 aspect ratio.
+        ${shoeDisplayDesc}
+        
+        [BRANDING & TEXT DECORATION]:
+        ${config.logo ? 'Place the uploaded logo from Image 2 [ref: your logo] above the text area, centered. Make the logo slightly glowing with neon blue lighting.' : 'Place an elegant futuristic glowing logo above the text area, centered.'}
+        
+        Below the logo, add a small italic uppercase subtitle:
+        "${subtitle}"
+        using a modern racing font, white with light blue glow.
+        
+        Add a large bold title:
+        "${title}"
+        CRITICAL RULE: This title "${title}" MUST be rendered ONLY, SOLELY, and EXCLUSIVELY using the iconic classic fonts "Times New Roman Bold" (heavy serif, ultra bold Roman typography with highly prominent sharp bracketed serifs). You are STRICTLY FORBIDDEN from using sporty blocky, modern sans-serif, rounded, or sans-serif digital style fonts. Every letter must show traditional thick-and-thin Roman line weight variations and well-defined classic sharp serifs. Only "Times New Roman Bold" typeface is permitted.
+        ${textColorDesc}
+        
+        [BACKGROUND & ENVIRONMENT]:
+        ${backgroundDesc}
+        
+        [STYLE & COMPOSITION]:
+        Use cinematic contrast, volumetric lighting, high-end commercial advertising style, luxury sports campaign, ultra realistic rendering, premium product photography, 8k details, sharp focus, dynamic composition.
+        No people, no extra shoes, no watermark, no text distortion.
+        
+        [NEGATIVE PROMPT]:
+        low quality, blurry, ${config.posterShoeDisplay === 'PAIR_WITH_BOX' ? 'multiple duplicate random shoes (only one pair of matching shoes is allowed)' : 'duplicate shoes, multiple shoes'}, cropped shoe, distorted text, broken logo, watermark, people, hands, feet, extra objects, oversaturated colors, messy composition, bad anatomy, low resolution, noisy image, unrealistic proportions
+      `;
     } else {
       const targetLabel = {
         'ANAK_LAKI': 'a young boy',

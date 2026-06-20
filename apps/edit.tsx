@@ -521,7 +521,7 @@ const GuberEdit: React.FC = () => {
 
   return (
     <div className="h-screen bg-slate-50/50 overflow-hidden">
-      <div className="max-w-2xl lg:max-w-7xl mx-auto h-full bg-white flex flex-col border-x border-slate-100 shadow-sm overflow-hidden">
+      <div className="max-w-2xl lg:max-w-7xl mx-auto h-full bg-[var(--color-app-bg)] flex flex-col border-x border-slate-100 shadow-sm overflow-hidden">
         {/* Header */}
         <div 
           className="p-4 border-b border-white/10 rounded-b-[40px] shadow-xl z-20 shrink-0"

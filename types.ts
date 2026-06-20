@@ -67,6 +67,7 @@ export enum AppId {
   GUBER_CITACITA2 = 'GUBER_CITACITA2',
   GUBER_SEPATU = 'GUBER_SEPATU',
   IMAGE_TO_PROMPT = 'IMAGE_TO_PROMPT',
+  GUBER_PROMPT_VIDEO = 'GUBER_PROMPT_VIDEO',
   GUBER_MINIDEKOR = 'GUBER_MINIDEKOR'
 }
 
@@ -307,11 +308,17 @@ export interface SepatuConfig {
   additionalPrompt?: string;
   orientation?: string;
   aspectRatio: '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
-  mode?: 'KATALOG' | 'SHOWROOM' | 'POV';
+  mode?: 'KATALOG' | 'SHOWROOM' | 'POV' | 'POSTER';
   logo?: string;
   soleMotif?: string;
   showroomAmbiance?: string;
   showroomColor?: string;
   showroomComposition?: string;
   povPreset?: string;
+  posterSubtitle?: string;
+  posterTitle?: string;
+  posterPreset?: string;
+  posterTitleColor?: string;
+  posterTitleColorCustom?: string;
+  posterShoeDisplay?: 'SINGLE' | 'PAIR_WITH_BOX';
 }

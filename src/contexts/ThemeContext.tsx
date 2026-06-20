@@ -16,6 +16,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   useEffect(() => {
     localStorage.setItem('primaryColor', primaryColor);
     document.documentElement.style.setProperty('--color-primary', primaryColor);
+    document.documentElement.style.setProperty('--color-app-bg', `color-mix(in srgb, ${primaryColor} 2%, white)`);
   }, [primaryColor]);
 
   useEffect(() => {

@@ -198,15 +198,47 @@ const GantiBaju: React.FC = () => {
   };
 
   return (
-    <div className="lg:h-screen bg-slate-50/50 lg:overflow-hidden min-h-screen custom-scrollbar overflow-x-hidden">
-      <div className="max-w-2xl lg:max-w-full mx-auto lg:h-full bg-white flex flex-col border-x border-slate-100 shadow-sm">
-        {/* Header - Hidden on Desktop */}
+    <div 
+      className="lg:h-screen lg:overflow-hidden min-h-screen custom-scrollbar overflow-x-hidden transition-colors duration-500 flex items-center justify-center p-0 lg:p-6"
+      style={{
+        background: `radial-gradient(circle at center, color-mix(in srgb, ${primaryColor} 85%, #000000 15%), color-mix(in srgb, ${primaryColor} 70%, #000000 30%))`
+      }}
+    >
+      <div 
+        className="w-full max-w-2xl lg:max-w-7xl mx-auto h-full flex flex-col shadow-2xl lg:rounded-3xl overflow-hidden relative border transition-all duration-500"
+        style={{
+          backgroundColor: `color-mix(in srgb, ${primaryColor} 94%, #000000 6%)`,
+          borderColor: `color-mix(in srgb, ${primaryColor} 30%, rgba(255, 255, 255, 0.2) 70%)`,
+          backdropFilter: 'blur(28px)'
+        }}
+      >
+        {/* Background radial grid line patterns */}
         <div 
-          className="p-4 border-b border-white/10 rounded-b-[40px] shadow-xl z-20 lg:hidden"
-          style={{ 
-            background: `linear-gradient(135deg, ${primaryColor}, color-mix(in srgb, ${primaryColor}, black 20%))`,
+          className="absolute inset-0 pointer-events-none opacity-60 z-0"
+          style={{
+            backgroundImage: `radial-gradient(circle, rgba(255, 255, 255, 0.45) 1.2px, transparent 1.2px)`,
+            backgroundSize: '20px 20px'
           }}
-        >
+        />
+
+        {/* Dynamic ambient backdrop glows */}
+        <div 
+          className="absolute top-[-100px] left-[-100px] w-96 h-96 rounded-full blur-[100px] pointer-events-none transition-colors duration-500 z-0" 
+          style={{ backgroundColor: `color-mix(in srgb, ${primaryColor} 10%, transparent)` }}
+        />
+        <div 
+          className="absolute bottom-[-150px] right-[-100px] w-[500px] h-[500px] rounded-full blur-[130px] pointer-events-none transition-colors duration-500 z-0" 
+          style={{ backgroundColor: `color-mix(in srgb, ${primaryColor} 8%, transparent)` }}
+        />
+
+        <div className="relative z-10 flex flex-col h-full w-full">
+          {/* Header - Hidden on Desktop */}
+          <div 
+            className="p-4 border-b border-white/10 rounded-b-[40px] shadow-xl z-20 lg:hidden"
+            style={{ 
+              background: `linear-gradient(135deg, ${primaryColor}, color-mix(in srgb, ${primaryColor}, black 20%))`,
+            }}
+          >
           <div className="flex items-center justify-center">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/20 text-white shadow-inner border border-white/30 backdrop-blur-sm">
@@ -435,33 +467,30 @@ const GantiBaju: React.FC = () => {
                 <button 
                   onClick={handleProcessFitting}
                   disabled={processing.isProcessing || !originalModel || (mode === 'FULL_SET' ? !fullSetAsset : mode === 'PARTS' ? (!topAsset && !bottomAsset) : !customPrompt.trim())}
-                  className="w-full py-5 rounded-3xl text-white font-black uppercase tracking-[0.2em] text-sm shadow-xl transition-all active:scale-95 disabled:opacity-30 flex items-center justify-center gap-3"
+                  className="w-full py-4 rounded-3xl text-white font-black uppercase tracking-[0.2em] text-lg transition-all flex items-center justify-center gap-3 border-2 border-white hover:brightness-105 active:scale-95"
                   style={{ 
-                    backgroundColor: (processing.isProcessing || !originalModel || (mode === 'FULL_SET' ? !fullSetAsset : mode === 'PARTS' ? (!topAsset && !bottomAsset) : !customPrompt.trim())) ? '#cbd5e1' : primaryColor 
+                    backgroundColor: (processing.isProcessing || !originalModel || (mode === 'FULL_SET' ? !fullSetAsset : mode === 'PARTS' ? (!topAsset && !bottomAsset) : !customPrompt.trim())) ? `color-mix(in srgb, ${primaryColor} 50%, white)` : primaryColor,
+                    boxShadow: `0 6px 0 ${(processing.isProcessing || !originalModel || (mode === 'FULL_SET' ? !fullSetAsset : mode === 'PARTS' ? (!topAsset && !bottomAsset) : !customPrompt.trim())) ? `color-mix(in srgb, ${primaryColor} 30%, #94a3b8)` : `color-mix(in srgb, ${primaryColor} 60%, black)`}, 0 15px 20px rgba(0,0,0,0.2)`
                   }}
                 >
-                  HASILKAN
+                  <span style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>HASILKAN</span>
                 </button>
               </div>
             </div>
 
             {/* Column 3: Result Section */}
             <div className="lg:col-span-6 flex flex-col gap-4 lg:h-full lg:overflow-hidden pt-8 lg:pt-0 lg:pl-4">
-              <div className="flex items-center justify-between shrink-0">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <ImageIcon size={14} className="text-slate-300" /> Rasio
-                </label>
-                
+              <div className="flex items-center shrink-0 w-full mb-1">
                 {/* Aspect Ratio Selection */}
-                <div className="flex-1 flex items-center gap-2 lg:gap-1 overflow-x-auto no-scrollbar justify-end ml-4">
+                <div className="grid grid-cols-5 gap-2 w-full">
                   {ratios.map((r) => (
                     <button
                       key={r.value}
                       onClick={() => setAspectRatio(r.value)}
-                      className={`px-3 py-1.5 lg:px-2 lg:py-1 rounded-lg border transition-all text-[10px] lg:text-[8px] font-black shrink-0 ${
+                      className={`py-2 rounded-xl border text-center transition-all text-xs lg:text-[10px] font-black w-full ${
                         aspectRatio === r.value 
                           ? 'shadow-sm' 
-                          : 'border-slate-100 bg-slate-50/50 text-slate-400 hover:border-slate-200'
+                          : 'border-slate-200 bg-slate-50/50 text-slate-400 hover:border-slate-300 hover:bg-slate-50'
                       }`}
                       style={{
                         backgroundColor: aspectRatio === r.value ? primaryColor : undefined,
@@ -572,13 +601,13 @@ const GantiBaju: React.FC = () => {
                     onClick={handleProcessFitting}
                     disabled={processing.isProcessing || !originalModel || (mode === 'FULL_SET' ? !fullSetAsset : mode === 'PARTS' ? (!topAsset && !bottomAsset) : !customPrompt.trim())}
                     title="Generate"
-                    className="hidden lg:flex order-5 lg:order-first col-span-1 lg:col-span-2 py-4 rounded-2xl border-2 text-white items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg disabled:opacity-30"
+                    className="hidden lg:flex order-5 lg:order-first col-span-1 lg:col-span-2 py-4 lg:py-0 lg:h-[85%] mt-auto mb-1 rounded-2xl flex-col text-white items-center justify-center transition-all border-2 border-white hover:brightness-105 active:scale-95"
                     style={{ 
-                      backgroundColor: (processing.isProcessing || !originalModel || (mode === 'FULL_SET' ? !fullSetAsset : mode === 'PARTS' ? (!topAsset && !bottomAsset) : !customPrompt.trim())) ? '#cbd5e1' : primaryColor, 
-                      borderColor: (processing.isProcessing || !originalModel || (mode === 'FULL_SET' ? !fullSetAsset : mode === 'PARTS' ? (!topAsset && !bottomAsset) : !customPrompt.trim())) ? '#cbd5e1' : primaryColor 
+                      backgroundColor: (processing.isProcessing || !originalModel || (mode === 'FULL_SET' ? !fullSetAsset : mode === 'PARTS' ? (!topAsset && !bottomAsset) : !customPrompt.trim())) ? `color-mix(in srgb, ${primaryColor} 50%, white)` : primaryColor,
+                      boxShadow: `0 5px 0 ${(processing.isProcessing || !originalModel || (mode === 'FULL_SET' ? !fullSetAsset : mode === 'PARTS' ? (!topAsset && !bottomAsset) : !customPrompt.trim())) ? `color-mix(in srgb, ${primaryColor} 30%, #94a3b8)` : `color-mix(in srgb, ${primaryColor} 60%, black)`}, 0 10px 15px rgba(0,0,0,0.2)`
                     }}
                   >
-                    <span className="font-black uppercase tracking-widest text-[10px]">HASILKAN</span>
+                    <span className="font-black uppercase tracking-[0.2em] text-[13px]" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>HASILKAN</span>
                   </button>
 
                   <button 
@@ -743,6 +772,7 @@ const GantiBaju: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
     </div>
   </div>
 );

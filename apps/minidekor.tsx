@@ -484,7 +484,7 @@ Camera: Elegant high-end professional Scandinavian home decor magazine style, ${
 
   return (
     <div className="lg:h-screen bg-slate-50/50 lg:overflow-hidden min-h-screen custom-scrollbar overflow-x-hidden">
-      <div className="max-w-2xl lg:max-w-full mx-auto lg:h-full bg-white flex flex-col border-x border-slate-100 shadow-sm">
+      <div className="max-w-2xl lg:max-w-full mx-auto lg:h-full bg-[var(--color-app-bg)] flex flex-col border-x border-slate-100 shadow-sm">
         
         {/* Mobile Header - Hidden on Desktop */}
         <div 
